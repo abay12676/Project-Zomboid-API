@@ -443,7 +443,8 @@ public class AntiCheat {
 
         if (cfg.isEnforceSyncClothing()) {
             if (!playerBelongsToConnection(con, target)) {
-                handleViolation(con, packet, "[enforceSendPlayerDeath] Sending clothing change to other player");
+                handleViolation(con, packet, "[enforceSyncClothing] Sending clothing change to other player");
+                return;
             }
         }
     }
