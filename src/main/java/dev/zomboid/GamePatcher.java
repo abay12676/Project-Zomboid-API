@@ -8,7 +8,6 @@ import org.objectweb.asm.tree.*;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -129,6 +128,7 @@ public class GamePatcher {
             Files.move(backup, modified);
         }
     }
+
     /**
      * Attempts to uninstall any existing mod files
      */

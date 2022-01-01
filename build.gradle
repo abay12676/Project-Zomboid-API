@@ -39,7 +39,7 @@ test {
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     archiveBaseName = 'ProjectZomboid'
-    archiveVersion = '0.1.0'
+    archiveVersion = '0.0.0'
     manifest {
         attributes(
                 'Main-Class': 'dev.zomboid.ToolEp'

@@ -8,6 +8,8 @@ import zombie.core.raknet.UdpConnection;
 import zombie.debug.DebugLog;
 import zombie.network.PacketTypes;
 import zombie.network.ZomboidNetData;
+import zombie.network.packets.DeadPlayerPacket;
+import zombie.network.packets.hit.*;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -15,10 +17,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-import zombie.network.packets.DeadPlayerPacket;
-import zombie.network.packets.hit.*;
-
-import static dev.zomboid.ZomboidApi.*;
+import static dev.zomboid.ZomboidApi.DISPLAY_NAME;
 
 public class AntiCheat {
 
@@ -114,6 +113,7 @@ public class AntiCheat {
         data.connection = con;
         return data;
     }
+
     /**
      * Retrieves custom network data for a connection.
      */
@@ -332,12 +332,12 @@ public class AntiCheat {
      * Enforces violations for players hitting other players.
      */
     private void enforcePlayerHitSquarePacket(UdpConnection con, ZomboidNetData packet, HitCharacterPacket hcp) {
-        PlayerHitSquarePacket hp = (PlayerHitSquarePacket)hcp;
+        PlayerHitSquarePacket hp = (PlayerHitSquarePacket) hcp;
         try {
-            Square sq = (Square)playerHitSquarePacketSquare.get(hp);
-            float x = (float)squareX.get(sq);
-            float y = (float)squareY.get(sq);
-            float z = (float)squareZ.get(sq);
+            Square sq = (Square) playerHitSquarePacketSquare.get(hp);
+            float x = (float) squareX.get(sq);
+            float y = (float) squareY.get(sq);
+            float z = (float) squareZ.get(sq);
             if (!distanceCheck(con, x, y, z, 100.f)) {
                 handleViolation(con, packet, "[enforcePlayerHitSquarePacket] Player too far from hit");
                 return;
@@ -410,8 +410,8 @@ public class AntiCheat {
     }
 
     private class CustomNetworkData {
-        private Map<Perk, Integer> lastKnownPerks = new HashMap<>();
-        private Map<Short, RateLimiter> rateLimiters = new HashMap<>();
+        private final Map<Perk, Integer> lastKnownPerks = new HashMap<>();
+        private final Map<Short, RateLimiter> rateLimiters = new HashMap<>();
         private UdpConnection connection;
         private IsoPlayer player;
 

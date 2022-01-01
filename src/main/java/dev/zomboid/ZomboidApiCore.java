@@ -44,10 +44,10 @@ public class ZomboidApiCore {
                 antiCheatCfg = new Gson().fromJson(Files.readString(cfgPath), AntiCheatCfg.class);
                 antiCheat.setCfg(antiCheatCfg);
             } catch (IOException e) {
-                DebugLog.log("Failed to parse anticheat configuration file 'anticheat.json'");
+                DebugLog.log("[initServer] Failed to parse anticheat configuration file 'anticheat.json'");
             }
         } else {
-            DebugLog.log("Failed to find anticheat configuration file 'anticheat.json'");
+            DebugLog.log("[initServer] Failed to find anticheat configuration file 'anticheat.json'");
         }
     }
 

@@ -1,26 +1,22 @@
 package dev.zomboid.cheat;
 
-import dev.zomboid.extend.AbstractEventHandler;
 import dev.zomboid.ZomboidApi;
+import dev.zomboid.extend.AbstractEventHandler;
 import zombie.characters.IsoPlayer;
 import zombie.network.GameClient;
-import zombie.ui.*;
+import zombie.ui.NewWindow;
+import zombie.ui.UIElement;
+import zombie.ui.UIFont;
+import zombie.ui.UITextBox2;
 
 import java.util.*;
 
-public class CheatWindow extends NewWindow  {
+public class CheatWindow extends NewWindow {
 
-    private class CheatPlayer {
-        private List<UIElement> elements = new LinkedList<>();
-    }
-
-    private UITextBox2 nameBox;
-
-    private List<CheatPlayer> orderedElements = new LinkedList<>();
-    private Map<IsoPlayer, CheatPlayer> playerMap = new HashMap<>();
-
+    private final UITextBox2 nameBox;
+    private final List<CheatPlayer> orderedElements = new LinkedList<>();
+    private final Map<IsoPlayer, CheatPlayer> playerMap = new HashMap<>();
     private IsoPlayer target = null;
-
     private long nextPacketTime = 0;
 
     public CheatWindow() {
@@ -166,5 +162,9 @@ public class CheatWindow extends NewWindow  {
             nextPacketTime = (t + 50);
         }
         super.update();
+    }
+
+    private class CheatPlayer {
+        private final List<UIElement> elements = new LinkedList<>();
     }
 }

@@ -2,7 +2,7 @@ package dev.zomboid.extend;
 
 import zombie.ui.UIEventHandler;
 
-public abstract class AbstractEventHandler implements UIEventHandler  {
+public abstract class AbstractEventHandler implements UIEventHandler {
     @Override
     public void DoubleClick(String s, int i, int i1) {
 

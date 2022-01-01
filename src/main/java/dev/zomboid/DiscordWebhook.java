@@ -19,7 +19,7 @@ public class DiscordWebhook {
     private String username;
     private String avatarUrl;
     private boolean tts;
-    private List<EmbedObject> embeds = new ArrayList<>();
+    private final List<EmbedObject> embeds = new ArrayList<>();
 
     public DiscordWebhook(String url) {
         this.url = url;
@@ -157,22 +157,42 @@ public class DiscordWebhook {
         private Thumbnail thumbnail;
         private Image image;
         private Author author;
-        private List<Field> fields = new ArrayList<>();
+        private final List<Field> fields = new ArrayList<>();
 
         public String getTitle() {
             return title;
+        }
+
+        public EmbedObject setTitle(String title) {
+            this.title = title;
+            return this;
         }
 
         public String getDescription() {
             return description;
         }
 
+        public EmbedObject setDescription(String description) {
+            this.description = description;
+            return this;
+        }
+
         public String getUrl() {
             return url;
         }
 
+        public EmbedObject setUrl(String url) {
+            this.url = url;
+            return this;
+        }
+
         public Color getColor() {
             return color;
+        }
+
+        public EmbedObject setColor(Color color) {
+            this.color = color;
+            return this;
         }
 
         public Footer getFooter() {
@@ -183,8 +203,18 @@ public class DiscordWebhook {
             return thumbnail;
         }
 
+        public EmbedObject setThumbnail(String url) {
+            this.thumbnail = new Thumbnail(url);
+            return this;
+        }
+
         public Image getImage() {
             return image;
+        }
+
+        public EmbedObject setImage(String url) {
+            this.image = new Image(url);
+            return this;
         }
 
         public Author getAuthor() {
@@ -195,38 +225,8 @@ public class DiscordWebhook {
             return fields;
         }
 
-        public EmbedObject setTitle(String title) {
-            this.title = title;
-            return this;
-        }
-
-        public EmbedObject setDescription(String description) {
-            this.description = description;
-            return this;
-        }
-
-        public EmbedObject setUrl(String url) {
-            this.url = url;
-            return this;
-        }
-
-        public EmbedObject setColor(Color color) {
-            this.color = color;
-            return this;
-        }
-
         public EmbedObject setFooter(String text, String icon) {
             this.footer = new Footer(text, icon);
-            return this;
-        }
-
-        public EmbedObject setThumbnail(String url) {
-            this.thumbnail = new Thumbnail(url);
-            return this;
-        }
-
-        public EmbedObject setImage(String url) {
-            this.image = new Image(url);
             return this;
         }
 
@@ -241,8 +241,8 @@ public class DiscordWebhook {
         }
 
         private class Footer {
-            private String text;
-            private String iconUrl;
+            private final String text;
+            private final String iconUrl;
 
             private Footer(String text, String iconUrl) {
                 this.text = text;
@@ -259,7 +259,7 @@ public class DiscordWebhook {
         }
 
         private class Thumbnail {
-            private String url;
+            private final String url;
 
             private Thumbnail(String url) {
                 this.url = url;
@@ -271,7 +271,7 @@ public class DiscordWebhook {
         }
 
         private class Image {
-            private String url;
+            private final String url;
 
             private Image(String url) {
                 this.url = url;
@@ -283,9 +283,9 @@ public class DiscordWebhook {
         }
 
         private class Author {
-            private String name;
-            private String url;
-            private String iconUrl;
+            private final String name;
+            private final String url;
+            private final String iconUrl;
 
             private Author(String name, String url, String iconUrl) {
                 this.name = name;
@@ -307,9 +307,9 @@ public class DiscordWebhook {
         }
 
         private class Field {
-            private String name;
-            private String value;
-            private boolean inline;
+            private final String name;
+            private final String value;
+            private final boolean inline;
 
             private Field(String name, String value, boolean inline) {
                 this.name = name;
@@ -359,7 +359,7 @@ public class DiscordWebhook {
                 } else if (val instanceof Boolean) {
                     builder.append(val);
                 } else if (val instanceof JSONObject) {
-                    builder.append(val.toString());
+                    builder.append(val);
                 } else if (val.getClass().isArray()) {
                     builder.append("[");
                     int len = Array.getLength(val);

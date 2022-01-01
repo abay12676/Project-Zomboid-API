@@ -26,10 +26,10 @@ public class Inject {
      * Injects a method call before each return in the method. The current object will be passed
      * to the called function.
      *
-     * @param node The method to inject into.
+     * @param node  The method to inject into.
      * @param owner The owner of the method to call.
-     * @param name The name of the method to call.
-     * @param desc The description of the method to call.
+     * @param name  The name of the method to call.
+     * @param desc  The description of the method to call.
      */
     public static void injectVirtualCallsBeforeReturns(MethodNode node, String owner, String name, String desc) {
         for (AbstractInsnNode ain : node.instructions.toArray()) {
@@ -43,10 +43,10 @@ public class Inject {
     /**
      * Injects a method call before each return in the method.
      *
-     * @param node The method to inject into.
+     * @param node  The method to inject into.
      * @param owner The owner of the method to call.
-     * @param name The name of the method to call.
-     * @param desc The description of the method to call.
+     * @param name  The name of the method to call.
+     * @param desc  The description of the method to call.
      */
     public static void injectStaticCallsBeforeReturns(MethodNode node, String owner, String name, String desc) {
         for (AbstractInsnNode ain : node.instructions.toArray()) {
@@ -60,10 +60,10 @@ public class Inject {
      * Injects a method call at the beginning of a method. The current object will be passed
      * to the called function.
      *
-     * @param node The method to inject into.
+     * @param node  The method to inject into.
      * @param owner The owner of the method to call.
-     * @param name The name of the method to call.
-     * @param desc The description of the method to call.
+     * @param name  The name of the method to call.
+     * @param desc  The description of the method to call.
      */
     public static void injectVirtualCallsBegin(MethodNode node, String owner, String name, String desc) {
         node.instructions.insert(new MethodInsnNode(Opcodes.INVOKESTATIC, owner, name, desc));
@@ -73,10 +73,10 @@ public class Inject {
     /**
      * Injects a method call at the beginning of a method.
      *
-     * @param node The method to inject into.
+     * @param node  The method to inject into.
      * @param owner The owner of the method to call.
-     * @param name The name of the method to call.
-     * @param desc The description of the method to call.
+     * @param name  The name of the method to call.
+     * @param desc  The description of the method to call.
      */
     public static void injectStaticCallsBegin(MethodNode node, String owner, String name, String desc) {
         node.instructions.insert(new MethodInsnNode(Opcodes.INVOKESTATIC, owner, name, desc));

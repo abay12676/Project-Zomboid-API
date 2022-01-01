@@ -10,6 +10,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+/**
+ * Provides access to the Zomboid classpath, which is just a loose
+ * set of files on disk.
+ */
 public final class ZomboidClassPath {
 
     private final Path root;
@@ -18,12 +22,19 @@ public final class ZomboidClassPath {
         this.root = Paths.get(root);
     }
 
+    /**
+     * Normalizes a path so that it uses windows conventions.
+     */
     private String normalize(String dir) {
         dir = dir.replace('/', '\\');
         dir = dir + ".class";
         return dir;
     }
 
+    /**
+     * Determines if a class on disk has been injected to or not. This is useful
+     * for determining if a game patch has been applied over top of our mods or not.
+     */
     private boolean isInjected(String dir) throws IOException {
         ClassReader cr = new ClassReader(Files.readAllBytes(root.resolve(dir)));
         ClassNode cn = new ClassNode();
@@ -38,6 +49,10 @@ public final class ZomboidClassPath {
         return false;
     }
 
+    /**
+     * Reads a class from disk. This will read the backup if available and the primary
+     * class file has not been replaced.
+     */
     public ClassNode readClass(String dir) throws IOException {
         dir = normalize(dir);
 
@@ -52,6 +67,10 @@ public final class ZomboidClassPath {
         return cn;
     }
 
+    /**
+     * Replaces a class file on disk. Creates a backup if none exists, or the file
+     * on disk has not been injected to yet.
+     */
     public void replaceClass(String dir, ClassNode node) throws IOException {
         dir = normalize(dir);
 

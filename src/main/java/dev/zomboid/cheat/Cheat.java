@@ -2,7 +2,6 @@ package dev.zomboid.cheat;
 
 import lombok.experimental.UtilityClass;
 import zombie.characterTextures.BloodBodyPartType;
-import zombie.characters.BodyDamage.BodyPart;
 import zombie.characters.BodyDamage.BodyPartType;
 import zombie.characters.IsoPlayer;
 import zombie.characters.IsoZombie;
@@ -15,7 +14,6 @@ import zombie.iso.IsoWorld;
 import zombie.iso.objects.IsoFire;
 import zombie.network.GameClient;
 import zombie.network.PacketTypes;
-import zombie.network.packets.hit.Zombie;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -43,7 +41,7 @@ public class Cheat {
     }
 
     public static void killAllZombies() {
-        IsoCell cell =  IsoWorld.instance.CurrentCell;
+        IsoCell cell = IsoWorld.instance.CurrentCell;
         if (cell != null) {
             for (IsoZombie z : cell.getZombieList()) {
                 GameClient.sendKillZombie(z);
@@ -93,9 +91,9 @@ public class Cheat {
             byteBufferWriter.putInt(square.getY());
             byteBufferWriter.putInt(square.getZ());
             byteBufferWriter.putInt(10000); // energy
-            byteBufferWriter.putByte((byte)1); // idk not used
+            byteBufferWriter.putByte((byte) 1); // idk not used
             byteBufferWriter.putInt(10000); // life
-            byteBufferWriter.putByte((byte)0); // idk not used
+            byteBufferWriter.putByte((byte) 0); // idk not used
             PacketTypes.PacketType.StartFire.send(GameClient.connection);
             System.out.println("Fire!!!");
         }

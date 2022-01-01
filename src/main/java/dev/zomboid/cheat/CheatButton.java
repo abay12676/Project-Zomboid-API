@@ -1,9 +1,11 @@
 package dev.zomboid.cheat;
 
-import zombie.Lua.LuaManager;
 import zombie.core.Color;
 import zombie.core.textures.Texture;
-import zombie.ui.*;
+import zombie.ui.TextManager;
+import zombie.ui.UIElement;
+import zombie.ui.UIEventHandler;
+import zombie.ui.UIFont;
 
 public class CheatButton extends UIElement {
     public boolean clicked = false;
@@ -21,8 +23,8 @@ public class CheatButton extends UIElement {
     private UIEventHandler MessageTarget2 = null;
 
     public CheatButton(UIElement target, float x, float y, String text, String name) {
-        this.x = (double)x;
-        this.y = (double)y;
+        this.x = x;
+        this.y = y;
         this.origX = x;
         this.MessageTarget = target;
         this.upLeft = Texture.getSharedTexture("ButtonL_Up");
@@ -39,13 +41,13 @@ public class CheatButton extends UIElement {
             this.width = 40.0F;
         }
 
-        this.height = (float)this.downMid.getHeight();
+        this.height = (float) this.downMid.getHeight();
     }
 
     public CheatButton(UIEventHandler var1, int var2, int var3, String var4, String var5) {
-        this.x = (double)var2;
-        this.y = (double)var3;
-        this.origX = (float)var2;
+        this.x = var2;
+        this.y = var3;
+        this.origX = (float) var2;
         this.MessageTarget2 = var1;
         this.upLeft = Texture.getSharedTexture("ButtonL_Up");
         this.upMid = Texture.getSharedTexture("ButtonM_Up");
@@ -55,13 +57,13 @@ public class CheatButton extends UIElement {
         this.downRight = Texture.getSharedTexture("ButtonR_Down");
         this.name = var5;
         this.text = var4;
-        this.width = (float)TextManager.instance.MeasureStringX(UIFont.Small, var4);
+        this.width = (float) TextManager.instance.MeasureStringX(UIFont.Small, var4);
         this.width += 8.0F;
         if (this.width < 40.0F) {
             this.width = 40.0F;
         }
 
-        this.height = (float)this.downMid.getHeight();
+        this.height = (float) this.downMid.getHeight();
     }
 
     public Boolean onMouseDown(double var1, double var3) {
@@ -101,13 +103,13 @@ public class CheatButton extends UIElement {
             boolean var1 = false;
             if (this.clicked) {
                 this.DrawTexture(this.downLeft, 0.0D, 0.0D, 1.0D);
-                this.DrawTextureScaledCol(this.downMid, (double)this.downLeft.getWidth(), 0.0D, (double)((int)(this.getWidth() - (double)(this.downLeft.getWidth() * 2))), (double)this.downLeft.getHeight(), new Color(255, 255, 255, 255));
-                this.DrawTexture(this.downRight, (double)((int)(this.getWidth() - (double)this.downRight.getWidth())), 0.0D, 1.0D);
+                this.DrawTextureScaledCol(this.downMid, this.downLeft.getWidth(), 0.0D, (int) (this.getWidth() - (double) (this.downLeft.getWidth() * 2)), this.downLeft.getHeight(), new Color(255, 255, 255, 255));
+                this.DrawTexture(this.downRight, (int) (this.getWidth() - (double) this.downRight.getWidth()), 0.0D, 1.0D);
                 this.DrawTextCentre(this.text, this.getWidth() / 2.0D, 1.0D, 1.0D, 1.0D, 1.0D, 1.0D);
             } else {
                 this.DrawTexture(this.upLeft, 0.0D, 0.0D, 1.0D);
-                this.DrawTextureScaledCol(this.upMid, (double)this.downLeft.getWidth(), 0.0D, (double)((int)(this.getWidth() - (double)(this.downLeft.getWidth() * 2))), (double)this.downLeft.getHeight(), new Color(255, 255, 255, 255));
-                this.DrawTexture(this.upRight, (double)((int)(this.getWidth() - (double)this.downRight.getWidth())), 0.0D, 1.0D);
+                this.DrawTextureScaledCol(this.upMid, this.downLeft.getWidth(), 0.0D, (int) (this.getWidth() - (double) (this.downLeft.getWidth() * 2)), this.downLeft.getHeight(), new Color(255, 255, 255, 255));
+                this.DrawTexture(this.upRight, (int) (this.getWidth() - (double) this.downRight.getWidth()), 0.0D, 1.0D);
                 this.DrawTextCentre(this.text, this.getWidth() / 2.0D, 0.0D, 1.0D, 1.0D, 1.0D, 1.0D);
             }
 
