@@ -343,7 +343,7 @@ public class AntiCheat {
 
         if (cfg.isEnforceDistance()) {
             if (!distanceCheck(con, target.x, target.y, target.z, 100.f)) {
-                handleViolation(con, packet, "[enforcePlayerHitSquarePacket] Player too far from hit");
+                handleViolation(con, packet, "[enforceSendPlayerDeath] Player too far from hit");
                 return;
             }
         }
@@ -361,13 +361,13 @@ public class AntiCheat {
         }
 
         if (target == null) {
-            handleMalformedPacket(con, packet, "Attempting to inflict additional pain to non-existent player");
+            handleMalformedPacket(con, packet, "[enforceAdditionalPain] Attempting to inflict additional pain to non-existent player");
             return;
         }
 
         if (cfg.isEnforceDistance()) {
             if (!distanceCheck(con, target.x, target.y, target.z, 100.f)) {
-                handleViolation(con, packet, "[enforcePlayerHitSquarePacket] Player too far away");
+                handleViolation(con, packet, "[enforceAdditionalPain] Player too far away");
                 return;
             }
         }
@@ -380,7 +380,7 @@ public class AntiCheat {
         short id = packet.buffer.getShort();
         IsoPlayer target = GameServer.IDToPlayerMap.get(id);
         if (target == null) {
-            handleMalformedPacket(con, packet, "Attempting to remove glass from non-existent player");
+            handleMalformedPacket(con, packet, "[enforceRemoveGlass] Attempting to remove glass from non-existent player");
             return;
         }
 
@@ -399,7 +399,7 @@ public class AntiCheat {
         short id = packet.buffer.getShort();
         IsoPlayer target = GameServer.IDToPlayerMap.get(id);
         if (target == null) {
-            handleMalformedPacket(con, packet, "Attempting to remove bullet from non-existent player");
+            handleMalformedPacket(con, packet, "[enforceRemoveBullet] Attempting to remove bullet from non-existent player");
             return;
         }
 
@@ -418,7 +418,7 @@ public class AntiCheat {
         short id = packet.buffer.getShort();
         IsoPlayer target = GameServer.IDToPlayerMap.get(id);
         if (target == null) {
-            handleMalformedPacket(con, packet, "Attempting to clean burn of non-existent player");
+            handleMalformedPacket(con, packet, "[enforceCleanBurn] Attempting to clean burn of non-existent player");
             return;
         }
 
@@ -437,7 +437,7 @@ public class AntiCheat {
         short id = packet.buffer.getShort();
         IsoPlayer target = GameServer.IDToPlayerMap.get(id);
         if (target == null) {
-            handleMalformedPacket(con, packet, "Attempting to sync clothing of non-existent player");
+            handleMalformedPacket(con, packet, "[enforceSyncClothing] Attempting to sync clothing of non-existent player");
             return;
         }
 
