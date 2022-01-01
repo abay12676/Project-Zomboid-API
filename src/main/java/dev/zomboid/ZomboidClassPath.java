@@ -2,6 +2,7 @@ package dev.zomboid;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.io.IOException;
@@ -23,11 +24,25 @@ public final class ZomboidClassPath {
         return dir;
     }
 
+    private boolean isInjected(String dir) throws IOException {
+        ClassReader cr = new ClassReader(Files.readAllBytes(root.resolve(dir)));
+        ClassNode cn = new ClassNode();
+        cr.accept(cn, 0);
+
+        for (AnnotationNode node : cn.visibleAnnotations) {
+            if (node.desc.equals("Ldev/zomboid/Injected;")) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public ClassNode readClass(String dir) throws IOException {
         dir = normalize(dir);
 
         Path bkup = root.resolve(dir + ".bkup");
-        if (Files.exists(bkup)) {
+        if (Files.exists(bkup) && isInjected(dir)) {
             dir = dir + ".bkup";
         }
 
@@ -42,7 +57,7 @@ public final class ZomboidClassPath {
 
         Path orig = root.resolve(dir);
         Path bkup = root.resolve(dir + ".bkup");
-        if (!Files.exists(bkup)) {
+        if (!Files.exists(bkup) || !isInjected(dir)) {
             Files.copy(orig, bkup);
         }
 

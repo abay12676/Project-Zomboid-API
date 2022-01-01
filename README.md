@@ -51,6 +51,5 @@ This option will apply rate limiting to packets to stop mass griefing attacks, s
 * Create a jar file from the root of your PZ, name this `zombie.jar`, and place it in the `lib` directory
 * Compile the API into a runnable jar with __Java 15__
 * Place this jar into your PZ root directory
-* Run the jar
-* Copy `gson-2.7.jar` and `commons-lang3-3.12.0.jar` in your PZ root directory
-* Modify your `ProjectZomboidServer.bat` to include the 2 previously listed jars like so `;commons-lang3-3.12.0.jar;gson-2.7.jar;./`
+* Run the jar file with the `-install` parameter on the command line
+* Your server/client is now modded
