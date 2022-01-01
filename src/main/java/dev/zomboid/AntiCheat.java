@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static dev.zomboid.ZomboidApi.DISPLAY_NAME;
+import static zombie.network.PacketTypes.PacketType.*;
 
 public class AntiCheat {
 
@@ -434,17 +435,17 @@ public class AntiCheat {
             }
         }
 
-        if (id == PacketTypes.PacketType.SyncPerks.getId()) {
+        if (id == SyncPerks.getId()) {
             enforceSyncPerks(con, packet);
-        } else if (id == PacketTypes.PacketType.Teleport.getId()) {
+        } else if (id == Teleport.getId()) {
             enforceTeleport(con, packet);
-        } else if (id == PacketTypes.PacketType.ExtraInfo.getId()) {
+        } else if (id == ExtraInfo.getId()) {
             enforceExtraInfo(con, packet);
-        } else if (id == PacketTypes.PacketType.PlayerDeath.getId()) {
+        } else if (id == PlayerDeath.getId()) {
             enforceSendPlayerDeath(con, packet);
-        } else if (id == PacketTypes.PacketType.AdditionalPain.getId()) {
+        } else if (id == AdditionalPain.getId()) {
             enforceAdditionalPain(con, packet);
-        } else if (id == PacketTypes.PacketType.HitCharacter.getId()) {
+        } else if (id == HitCharacter.getId()) {
             HitCharacterPacket hcp = HitCharacterPacket.process(packet.buffer);
             hcp.parse(packet.buffer);
             if (hcp instanceof PlayerHitSquarePacket) {
