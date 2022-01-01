@@ -8,10 +8,8 @@ import zombie.characters.IsoZombie;
 import zombie.core.raknet.UdpConnection;
 import zombie.debug.DebugLog;
 import zombie.network.GameServer;
-import zombie.network.PacketTypes;
 import zombie.network.ZomboidNetData;
 import zombie.network.packets.DeadPlayerPacket;
-import zombie.network.packets.SyncClothingPacket;
 import zombie.network.packets.hit.*;
 
 import java.io.IOException;
@@ -195,6 +193,11 @@ public class AntiCheat {
         return con.accessLevel.equalsIgnoreCase("admin") || con.accessLevel.equalsIgnoreCase("moderator");
     }
 
+    /**
+     * Sends a report to discord through the provided webhook API URL.
+     *
+     * TODO FIXME rate limiting!!!
+     */
     private void reportToDiscord(String msg) {
         DiscordWebhook hook = new DiscordWebhook(cfg.getDiscordApi());
         hook.setUsername(DISPLAY_NAME);
@@ -449,6 +452,7 @@ public class AntiCheat {
             }
         }
     }
+
     /**
      * Enforces violations for players hitting objects/squares.
      */
