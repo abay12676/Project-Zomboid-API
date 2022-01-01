@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringEscapeUtils;
 import zombie.characters.IsoPlayer;
+import zombie.characters.IsoZombie;
 import zombie.core.raknet.UdpConnection;
 import zombie.debug.DebugLog;
 import zombie.network.GameServer;
@@ -497,7 +498,7 @@ public class AntiCheat {
         PlayerHitZombiePacket hp = (PlayerHitZombiePacket) hcp;
         try {
             Zombie zombie = (Zombie) playerHitZombiePacketTarget.get(hp);
-            IsoPlayer zm = (IsoPlayer) zombieZombie.get(zombie);
+            IsoZombie zm = (IsoZombie) zombieZombie.get(zombie);
 
             if (cfg.isEnforceDistance()) {
                 if (!distanceCheck(con, zm.x, zm.y, zm.z, 100.f)) {
