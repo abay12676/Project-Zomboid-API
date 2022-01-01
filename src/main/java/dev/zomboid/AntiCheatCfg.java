@@ -60,6 +60,13 @@ public class AntiCheatCfg {
     private boolean enforceAdditionalPain = true;
 
     /**
+     * If true, player clothing synchronization requests must be associated with the network connection or a violation
+     * will be caused.
+     */
+    @SerializedName("enforceSyncClothing")
+    private boolean enforceSyncClothing = true;
+
+    /**
      * If true, checks will be put in various places such as interacting with other players,
      * zombies, objects, etc. Being too far away when interacting will cause a violation.
      */

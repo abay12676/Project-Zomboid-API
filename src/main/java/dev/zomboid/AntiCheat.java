@@ -10,6 +10,7 @@ import zombie.network.GameServer;
 import zombie.network.PacketTypes;
 import zombie.network.ZomboidNetData;
 import zombie.network.packets.DeadPlayerPacket;
+import zombie.network.packets.SyncClothingPacket;
 import zombie.network.packets.hit.*;
 
 import java.io.IOException;
@@ -366,12 +367,86 @@ public class AntiCheat {
 
         if (cfg.isEnforceDistance()) {
             if (!distanceCheck(con, target.x, target.y, target.z, 100.f)) {
-                handleViolation(con, packet, "[enforcePlayerHitSquarePacket] Player too far from hit");
+                handleViolation(con, packet, "[enforcePlayerHitSquarePacket] Player too far away");
                 return;
             }
         }
     }
 
+    /**
+     * Enforces violations for removing glass from a player.
+     */
+    private void enforceRemoveGlass(UdpConnection con, ZomboidNetData packet) {
+        short id = packet.buffer.getShort();
+        IsoPlayer target = GameServer.IDToPlayerMap.get(id);
+        if (target == null) {
+            handleMalformedPacket(con, packet, "Attempting to remove glass from non-existent player");
+            return;
+        }
+
+        if (cfg.isEnforceDistance()) {
+            if (!distanceCheck(con, target.x, target.y, target.z, 100.f)) {
+                handleViolation(con, packet, "[enforceRemoveGlass] Player too far away");
+                return;
+            }
+        }
+    }
+
+    /**
+     * Enforces violations for removing a bullet from a player.
+     */
+    private void enforceRemoveBullet(UdpConnection con, ZomboidNetData packet) {
+        short id = packet.buffer.getShort();
+        IsoPlayer target = GameServer.IDToPlayerMap.get(id);
+        if (target == null) {
+            handleMalformedPacket(con, packet, "Attempting to remove bullet from non-existent player");
+            return;
+        }
+
+        if (cfg.isEnforceDistance()) {
+            if (!distanceCheck(con, target.x, target.y, target.z, 100.f)) {
+                handleViolation(con, packet, "[enforceRemoveBullet] Player too far away");
+                return;
+            }
+        }
+    }
+
+    /**
+     * Enforces violations for cleaning a player's burn.
+     */
+    private void enforceCleanBurn(UdpConnection con, ZomboidNetData packet) {
+        short id = packet.buffer.getShort();
+        IsoPlayer target = GameServer.IDToPlayerMap.get(id);
+        if (target == null) {
+            handleMalformedPacket(con, packet, "Attempting to clean burn of non-existent player");
+            return;
+        }
+
+        if (cfg.isEnforceDistance()) {
+            if (!distanceCheck(con, target.x, target.y, target.z, 100.f)) {
+                handleViolation(con, packet, "[enforceCleanBurn] Player too far away");
+                return;
+            }
+        }
+    }
+
+    /**
+     * Enforces violations for synchronizing clothing.
+     */
+    private void enforceSyncClothing(UdpConnection con, ZomboidNetData packet) {
+        short id = packet.buffer.getShort();
+        IsoPlayer target = GameServer.IDToPlayerMap.get(id);
+        if (target == null) {
+            handleMalformedPacket(con, packet, "Attempting to sync clothing of non-existent player");
+            return;
+        }
+
+        if (cfg.isEnforceSyncClothing()) {
+            if (!playerBelongsToConnection(con, target)) {
+                handleViolation(con, packet, "[enforceSendPlayerDeath] Sending clothing change to other player");
+            }
+        }
+    }
     /**
      * Enforces violations for players hitting objects/squares.
      */
@@ -461,6 +536,14 @@ public class AntiCheat {
             enforceSendPlayerDeath(con, packet);
         } else if (id == AdditionalPain.getId()) {
             enforceAdditionalPain(con, packet);
+        } else if (id == RemoveGlass.getId()) {
+            enforceRemoveGlass(con, packet);
+        } else if (id == RemoveBullet.getId()) {
+            enforceRemoveBullet(con, packet);
+        } else if (id == CleanBurn.getId()) {
+            enforceCleanBurn(con, packet);
+        } else if (id == SyncClothing.getId()) {
+            enforceSyncClothing(con, packet);
         } else if (id == HitCharacter.getId()) {
             HitCharacterPacket hcp = HitCharacterPacket.process(packet.buffer);
             hcp.parse(packet.buffer);
