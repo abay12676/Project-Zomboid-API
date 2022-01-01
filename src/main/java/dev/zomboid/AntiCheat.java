@@ -25,6 +25,9 @@ public class AntiCheat {
 
     // reflection data to access private zomboid fields..
 
+    private Field playerHitZombiePacketTarget;
+    private Field zombieZombie;
+
     private Field playerHitPlayerPacketTarget;
     private Field playerHitPlayerPacketHit;
     private Field playerPlayer;
@@ -48,6 +51,12 @@ public class AntiCheat {
 
             playerPlayer = Player.class.getDeclaredField("player");
             playerPlayer.setAccessible(true);
+
+            playerHitZombiePacketTarget = PlayerHitZombiePacket.class.getDeclaredField("target");
+            playerHitZombiePacketTarget.setAccessible(true);
+
+            zombieZombie = Zombie.class.getDeclaredField("zombie");
+            zombieZombie.setAccessible(true);
 
             playerHitSquarePacketSquare = PlayerHitSquarePacket.class.getDeclaredField("square");
             playerHitSquarePacketSquare.setAccessible(true);
@@ -88,8 +97,6 @@ public class AntiCheat {
      * Performs a distance check.
      */
     private boolean distanceCheck(IsoPlayer a, float x, float y, float z, float distance) {
-
-        DebugLog.log(a.x + " " + a.y + " " + a.z + " + " + x + " " + y + " " + z);
         return Math.sqrt(Math.pow(a.x - x, 2) + Math.pow(a.y - y, 2) + Math.pow(a.z - z, 2)) < distance;
     }
 
@@ -269,24 +276,26 @@ public class AntiCheat {
         }
 
         CustomNetworkData data = getCustomNetworkData(con, player.getUsername());
-        if (!data.validatePlayer(player)) {
-            handleViolation(con, packet, "[enforceSyncPerks] Failed to validate player");
-            return;
-        }
+        if (cfg.isEnforceSyncPerks()) {
+            if (!data.validatePlayer(player)) {
+                handleViolation(con, packet, "[enforceSyncPerks] Failed to validate player");
+                return;
+            }
 
-        if (!validateSyncPerk(data, Perk.SNEAK, sneak)) {
-            handleViolation(con, packet, "[enforceSyncPerks] Failed to validate sneak");
-            return;
-        }
+            if (!validateSyncPerk(data, Perk.SNEAK, sneak)) {
+                handleViolation(con, packet, "[enforceSyncPerks] Failed to validate sneak");
+                return;
+            }
 
-        if (!validateSyncPerk(data, Perk.STR, str)) {
-            handleViolation(con, packet, "[enforceSyncPerks] Failed to validate str");
-            return;
-        }
+            if (!validateSyncPerk(data, Perk.STR, str)) {
+                handleViolation(con, packet, "[enforceSyncPerks] Failed to validate str");
+                return;
+            }
 
-        if (!validateSyncPerk(data, Perk.FIT, fit)) {
-            handleViolation(con, packet, "[enforceSyncPerks] Failed to validate fit");
-            return;
+            if (!validateSyncPerk(data, Perk.FIT, fit)) {
+                handleViolation(con, packet, "[enforceSyncPerks] Failed to validate fit");
+                return;
+            }
         }
 
         data.lastKnownPerks.put(Perk.SNEAK, sneak);
@@ -298,14 +307,20 @@ public class AntiCheat {
      * Enforces violations for teleporting.
      */
     private void enforceTeleport(UdpConnection con, ZomboidNetData packet) {
-        handleViolation(con, packet, "[enforceTeleport] Not allowed to teleport");
+        if (cfg.isEnforceTeleport()) {
+            handleViolation(con, packet, "[enforceTeleport] Not allowed to teleport");
+            return;
+        }
     }
 
     /**
-     * Enforces violations for teleporting.
+     * Enforces violations for sending extra information.
      */
     private void enforceExtraInfo(UdpConnection con, ZomboidNetData packet) {
-        handleViolation(con, packet, "[enforceExtraInfo] Not allowed to send extra info");
+        if (cfg.isEnforceExtraInfo()) {
+            handleViolation(con, packet, "[enforceExtraInfo] Not allowed to send extra info");
+            return;
+        }
     }
 
     /**
@@ -316,8 +331,18 @@ public class AntiCheat {
         dp.parse(packet.buffer);
 
         IsoPlayer target = dp.getPlayer();
-        if (!playerBelongsToConnection(con, target)) {
-            handleViolation(con, packet, "[enforceSendPlayerDeath] Sending player death to other player");
+        if (cfg.isEnforcePlayerDeaths()) {
+            if (!playerBelongsToConnection(con, target)) {
+                handleViolation(con, packet, "[enforceSendPlayerDeath] Sending player death to other player");
+                return;
+            }
+        }
+
+        if (cfg.isEnforceDistance()) {
+            if (!distanceCheck(con, target.x, target.y, target.z, 100.f)) {
+                handleViolation(con, packet, "[enforcePlayerHitSquarePacket] Player too far from hit");
+                return;
+            }
         }
     }
 
@@ -325,11 +350,13 @@ public class AntiCheat {
      * Enforces violations for additional pain.
      */
     private void enforceAdditionalPain(UdpConnection con, ZomboidNetData packet) {
-        handleViolation(con, packet, "[enforceAdditionalPain] Sending additional pain packet");
+        if (cfg.isEnforceAdditionalPain()) {
+            handleViolation(con, packet, "[enforceAdditionalPain] Sending additional pain packet");
+        }
     }
 
     /**
-     * Enforces violations for players hitting other players.
+     * Enforces violations for players hitting objects/squares.
      */
     private void enforcePlayerHitSquarePacket(UdpConnection con, ZomboidNetData packet, HitCharacterPacket hcp) {
         PlayerHitSquarePacket hp = (PlayerHitSquarePacket) hcp;
@@ -338,12 +365,55 @@ public class AntiCheat {
             float x = (float) squareX.get(sq);
             float y = (float) squareY.get(sq);
             float z = (float) squareZ.get(sq);
-            if (!distanceCheck(con, x, y, z, 100.f)) {
-                handleViolation(con, packet, "[enforcePlayerHitSquarePacket] Player too far from hit");
-                return;
+
+            if (cfg.isEnforceDistance()) {
+                if (!distanceCheck(con, x, y, z, 100.f)) {
+                    handleViolation(con, packet, "[enforcePlayerHitSquarePacket] Player too far from hit");
+                    return;
+                }
             }
         } catch (IllegalAccessException e) {
             DebugLog.log("Failed to read square info");
+        }
+    }
+
+    /**
+     * Enforces violations for players hitting other players.
+     */
+    private void enforcePlayerHitPlayerPacket(UdpConnection con, ZomboidNetData packet, HitCharacterPacket hcp) {
+        PlayerHitPlayerPacket hp = (PlayerHitPlayerPacket) hcp;
+        try {
+            Player plr = (Player) playerHitPlayerPacketTarget.get(hp);
+            IsoPlayer pl = (IsoPlayer) playerPlayer.get(plr);
+
+            if (cfg.isEnforceDistance()) {
+                if (!distanceCheck(con, pl.x, pl.y, pl.z, 100.f)) {
+                    handleViolation(con, packet, "[enforcePlayerHitPlayerPacket] Player too far from hit");
+                    return;
+                }
+            }
+        } catch (IllegalAccessException e) {
+            DebugLog.log("Failed to read player info");
+        }
+    }
+
+    /**
+     * Enforces violations for players hitting a zombie.
+     */
+    private void enforcePlayerHitZombiePacket(UdpConnection con, ZomboidNetData packet, HitCharacterPacket hcp) {
+        PlayerHitZombiePacket hp = (PlayerHitZombiePacket) hcp;
+        try {
+            Zombie zombie = (Zombie) playerHitZombiePacketTarget.get(hp);
+            IsoPlayer zm = (IsoPlayer) zombieZombie.get(zombie);
+
+            if (cfg.isEnforceDistance()) {
+                if (!distanceCheck(con, zm.x, zm.y, zm.z, 100.f)) {
+                    handleViolation(con, packet, "[enforcePlayerHitZombiePacket] Player too far from hit");
+                    return;
+                }
+            }
+        } catch (IllegalAccessException e) {
+            DebugLog.log("Failed to read zombie info");
         }
     }
 
@@ -364,41 +434,25 @@ public class AntiCheat {
             }
         }
 
-        if (cfg.isEnforceSyncPerks()) {
-            if (id == PacketTypes.PacketType.SyncPerks.getId()) {
-                enforceSyncPerks(con, packet);
-            }
-        }
-
-        if (cfg.isEnforceTeleport()) {
-            if (id == PacketTypes.PacketType.Teleport.getId()) {
-                enforceTeleport(con, packet);
-            }
-        }
-
-        if (cfg.isEnforceExtraInfo()) {
-            if (id == PacketTypes.PacketType.ExtraInfo.getId()) {
-                enforceExtraInfo(con, packet);
-            }
-        }
-
-        if (cfg.isEnforcePlayerDeaths()) {
-            if (id == PacketTypes.PacketType.PlayerDeath.getId()) {
-                enforceSendPlayerDeath(con, packet);
-            }
-        }
-
-        if (cfg.isEnforceAdditionalPain()) {
-            if (id == PacketTypes.PacketType.AdditionalPain.getId()) {
-                enforceAdditionalPain(con, packet);
-            }
-        }
-
-        if (id == PacketTypes.PacketType.HitCharacter.getId()) {
+        if (id == PacketTypes.PacketType.SyncPerks.getId()) {
+            enforceSyncPerks(con, packet);
+        } else if (id == PacketTypes.PacketType.Teleport.getId()) {
+            enforceTeleport(con, packet);
+        } else if (id == PacketTypes.PacketType.ExtraInfo.getId()) {
+            enforceExtraInfo(con, packet);
+        } else if (id == PacketTypes.PacketType.PlayerDeath.getId()) {
+            enforceSendPlayerDeath(con, packet);
+        } else if (id == PacketTypes.PacketType.AdditionalPain.getId()) {
+            enforceAdditionalPain(con, packet);
+        } else if (id == PacketTypes.PacketType.HitCharacter.getId()) {
             HitCharacterPacket hcp = HitCharacterPacket.process(packet.buffer);
             hcp.parse(packet.buffer);
             if (hcp instanceof PlayerHitSquarePacket) {
                 enforcePlayerHitSquarePacket(con, packet, hcp);
+            } else if (hcp instanceof PlayerHitPlayerPacket) {
+                enforcePlayerHitPlayerPacket(con, packet, hcp);
+            } else if (hcp instanceof PlayerHitZombiePacket) {
+                enforcePlayerHitZombiePacket(con, packet, hcp);
             }
         }
     }

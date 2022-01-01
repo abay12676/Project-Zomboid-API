@@ -60,6 +60,13 @@ public class AntiCheatCfg {
     private boolean enforceAdditionalPain = true;
 
     /**
+     * If true, checks will be put in various places such as interacting with other players,
+     * zombies, objects, etc. Being too far away when interacting will cause a violation.
+     */
+    @SerializedName("enforceDistance")
+    private boolean enforceDistance = true;
+
+    /**
      * If rate limiting is enabled.
      */
     @SerializedName("rateLimiting")
