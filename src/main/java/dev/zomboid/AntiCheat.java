@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import zombie.characters.IsoPlayer;
 import zombie.core.raknet.UdpConnection;
 import zombie.debug.DebugLog;
+import zombie.network.GameServer;
 import zombie.network.PacketTypes;
 import zombie.network.ZomboidNetData;
 import zombie.network.packets.DeadPlayerPacket;
@@ -351,8 +352,23 @@ public class AntiCheat {
      * Enforces violations for additional pain.
      */
     private void enforceAdditionalPain(UdpConnection con, ZomboidNetData packet) {
+        short id = packet.buffer.getShort();
+        IsoPlayer target = GameServer.IDToPlayerMap.get(id);
         if (cfg.isEnforceAdditionalPain()) {
             handleViolation(con, packet, "[enforceAdditionalPain] Sending additional pain packet");
+            return;
+        }
+
+        if (target == null) {
+            handleMalformedPacket(con, packet, "Attempting to inflict additional pain to non-existent player");
+            return;
+        }
+
+        if (cfg.isEnforceDistance()) {
+            if (!distanceCheck(con, target.x, target.y, target.z, 100.f)) {
+                handleViolation(con, packet, "[enforcePlayerHitSquarePacket] Player too far from hit");
+                return;
+            }
         }
     }
 
