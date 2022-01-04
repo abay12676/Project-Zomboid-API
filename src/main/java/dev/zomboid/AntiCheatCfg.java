@@ -17,13 +17,6 @@ public class AntiCheatCfg {
     public String discordApi = "";
 
     /**
-     * The player ids in packets will be overwritten with the player id from the UDP connection
-     * if a valid player id is not found in the UDP connection's player array.
-     */
-    @SerializedName("packetOwnershipRule")
-    private AntiCheatRule packetOwnershipRule = new AntiCheatRule(false);
-
-    /**
      * The sync perks packet will be validated to ensure no cheating is detected.
      */
     @SerializedName("syncPerksRule")
@@ -103,8 +96,7 @@ public class AntiCheatCfg {
     @Override
     public String toString() {
         return "AntiCheatCfg{" +
-                "packetOwnershipRule=" + packetOwnershipRule +
-                "\n syncPerksRule=" + syncPerksRule +
+                "syncPerksRule=" + syncPerksRule +
                 "\n teleportRule=" + teleportRule +
                 "\n extraInfoRule=" + extraInfoRule +
                 "\n playerDeathsRule=" + playerDeathsRule +

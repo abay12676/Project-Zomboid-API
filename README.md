@@ -10,6 +10,9 @@ This API comes with a small anti-cheat for your server, as the game is missing a
 	"syncPerksRule": {
       "enabled": "false"
     },
+    "syncClothingRule": {
+      "enabled": "false"
+    },
 	"teleportRule": {
       "enabled": "true",
       "action": "DISCONNECT"
