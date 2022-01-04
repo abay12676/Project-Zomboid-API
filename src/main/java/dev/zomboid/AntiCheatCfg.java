@@ -20,64 +20,52 @@ public class AntiCheatCfg {
      * If true, the player ids in packets will be overwritten with the player id from the UDP connection
      * if a valid player id is not found in the UDP connection's player array.
      */
-    @SerializedName("enforcePacketOwnership")
-    private boolean enforcePacketOwnership = true;
+    @SerializedName("packetOwnershipRule")
+    private AntiCheatRule packetOwnershipRule = new AntiCheatRule(false);
 
     /**
      * If true, the sync perks packet will be validated to ensure no cheating is detected.
      */
-    @SerializedName("enforceSyncPerks")
-    private boolean enforceSyncPerks = false;
+    @SerializedName("syncPerksRule")
+    private AntiCheatSyncPerksRule syncPerksRule = new AntiCheatSyncPerksRule(false);
 
     /**
      * If true, teleports will cause violations unless the player is a mod/admin.
      */
-    @SerializedName("enforceTeleport")
-    private boolean enforceTeleport = true;
+    @SerializedName("teleportRule")
+    private AntiCheatRule teleportRule = new AntiCheatRule(false);
 
     /**
      * If true, extra info packets will cause violations unless the player is a mod/admin.
      */
-    @SerializedName("enforceExtraInfo")
-    private boolean enforceExtraInfo = true;
+    @SerializedName("extraInfoRule")
+    private AntiCheatRule extraInfoRule = new AntiCheatRule(true);
 
     /**
      * If true, player death packets must be a player associated with the network connection or a violation will be caused.
      */
-    @SerializedName("enforcePlayerDeaths")
-    private boolean enforcePlayerDeaths = true;
-
-    /**
-     * The difference in value that a perk change must hit in order to cause a violation.
-     */
-    @SerializedName("enforceSyncThreshold")
-    private int enforceSyncThreshold = 10;
+    @SerializedName("playerDeathsRule")
+    private AntiCheatRule playerDeathsRule = new AntiCheatRule(false);
 
     /**
      * If true, additional pain packets will cause a violation.
      */
-    @SerializedName("enforceAdditionalPain")
-    private boolean enforceAdditionalPain = true;
+    @SerializedName("additionalPainRule")
+    private AntiCheatRule additionalPainRule = new AntiCheatRule(false);
 
     /**
      * If true, player clothing synchronization requests must be associated with the network connection or a violation
      * will be caused.
      */
-    @SerializedName("enforceSyncClothing")
-    private boolean enforceSyncClothing = true;
+    @SerializedName("syncClothingRule")
+    private AntiCheatRule syncClothingRule = new AntiCheatRule(false);
 
     /**
      * If true, checks will be put in various places such as interacting with other players,
      * zombies, objects, etc. Being too far away when interacting will cause a violation.
      */
-    @SerializedName("enforceDistance")
-    private boolean enforceDistance = true;
-
-    /**
-     * If rate limiting is enabled.
-     */
-    @SerializedName("rateLimiting")
-    private boolean rateLimiting = true;
+    @SerializedName("distanceRule")
+    private AntiCheatDistanceRule distanceRule = new AntiCheatDistanceRule(false);
 
     /**
      * A list of rate limits to apply.
@@ -86,10 +74,6 @@ public class AntiCheatCfg {
     private List<AntiCheatRateLimit> rateLimits = new LinkedList<>();
 
     public boolean isRateLimited(short type) {
-        if (!rateLimiting) {
-            return false;
-        }
-
         for (AntiCheatRateLimit rl : rateLimits) {
             PacketTypes.PacketType t = PacketTypes.PacketType.valueOf(rl.getType());
             if (t.getId() == type) {
@@ -107,5 +91,20 @@ public class AntiCheatCfg {
             }
         }
         return 0;
+    }
+
+    @Override
+    public String toString() {
+        return "AntiCheatCfg{" +
+                "packetOwnershipRule=" + packetOwnershipRule +
+                "\n syncPerksRule=" + syncPerksRule +
+                "\n teleportRule=" + teleportRule +
+                "\n extraInfoRule=" + extraInfoRule +
+                "\n playerDeathsRule=" + playerDeathsRule +
+                "\n additionalPainRule=" + additionalPainRule +
+                "\n syncClothingRule=" + syncClothingRule +
+                "\n distanceRule=" + distanceRule +
+                "\n rateLimits=" + rateLimits +
+                '}';
     }
 }

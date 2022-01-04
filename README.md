@@ -7,13 +7,30 @@ This API comes with a small anti-cheat for your server, as the game is missing a
 ```Json
 {
 	"discordApi": "",
-	"enforceSyncPerks": false,
-	"enforceSyncThreshold": 10,
-	"enforceTeleport": false,
-	"enforceExtraInfo": false,
-	"enforcePlayerDeaths": false,
-	"enforceAdditionalPain": false,
-	"rateLimiting": true,
+	"syncPerksRule": {
+      "enabled": "false"
+    },
+	"enforceTeleport": {
+      "enabled": "true",
+      "action": "DISCONNECT"
+    },
+	"enforceExtraInfo": {
+      "enabled": "true",
+      "action": "DISCONNECT"
+    },
+	"playerDeathsRule": {
+      "enabled": "true",
+      "action": "DISCONNECT"
+    },
+	"additionalPainRule": {
+      "enabled": "true",
+      "action": "DISCONNECT"
+    }, 
+    "distanceRule": {
+      "enabled": "true",
+      "action": "DISCONNECT",
+      "threshold": 100.0
+    },
 	"rateLimits": [
 		{
 			"type": "StartFire",

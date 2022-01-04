@@ -105,6 +105,9 @@ public class GamePatcher {
      * Attempts to install the mod on top of the game.
      */
     public void install() throws IOException {
+        System.out.println("Removing old installation");
+        uninstall();
+
         System.out.println("Injecting into Core");
         injectCore();
 

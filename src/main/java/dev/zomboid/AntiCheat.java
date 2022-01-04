@@ -9,6 +9,7 @@ import zombie.characters.IsoZombie;
 import zombie.core.raknet.UdpConnection;
 import zombie.debug.DebugLog;
 import zombie.network.GameServer;
+import zombie.network.ServerWorldDatabase;
 import zombie.network.ZomboidNetData;
 import zombie.network.packets.DeadPlayerPacket;
 import zombie.network.packets.hit.*;
@@ -16,6 +17,7 @@ import zombie.network.packets.hit.*;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -232,9 +234,57 @@ public class AntiCheat {
     }
 
     /**
+     * Enforces a ban steam id action onto a connection.
+     */
+    private void enforceActionBanSteamId(UdpConnection con, String reason) throws SQLException {
+        for (IsoPlayer p : con.players) {
+            if (p != null) {
+                ServerWorldDatabase.instance.banSteamID(Long.toString(p.getSteamID()), reason, true);
+            }
+        }
+    }
+
+    /**
+     * Enforces a ban ip action onto a connection.
+     */
+    private void enforceActionBanIp(UdpConnection con, String reason) throws SQLException {
+        for (IsoPlayer p : con.players) {
+            if (p != null) {
+                ServerWorldDatabase.instance.banIp(con.ip, p.getUsername(), reason, true);
+            }
+        }
+    }
+
+    /**
+     * Enforces an action onto a connection.
+     */
+    private void enforceAction(UdpConnection con, String reason, AntiCheatAction action) {
+        try {
+            switch (action) {
+                case BAN_STEAM_ID:
+                    enforceActionBanSteamId(con, reason);
+                    break;
+                case BAN_IP:
+                    enforceActionBanIp(con, reason);
+                    break;
+                case BAN_ALL:
+                    enforceActionBanSteamId(con, reason);
+                    enforceActionBanIp(con, reason);
+                    break;
+                case DISCONNECT:
+                    con.forceDisconnect();
+                    break;
+            }
+        } catch (Throwable e) {
+            DebugLog.log("[enforceAction] Exception occurred during action.");
+            con.forceDisconnect();
+        }
+    }
+
+    /**
      * Handles a violation
      */
-    private void handleViolation(UdpConnection con, ZomboidNetData packet, String reason) {
+    private void handleViolation(UdpConnection con, String reason, AntiCheatAction action) {
         if (canCheat(con)) {
             return;
         }
@@ -250,7 +300,7 @@ public class AntiCheat {
         }
 
         reportToDiscord("## Violation generated for player __" + name + "__  \nSteam: __" + steam + "__  \nReason: __" + reason + "__");
-        con.forceDisconnect();
+
     }
 
     /**
@@ -259,7 +309,7 @@ public class AntiCheat {
     private boolean validateSyncPerk(CustomNetworkData data, Perk perk, int v) {
         if (data.lastKnownPerks.containsKey(perk)) {
             int diff = Math.abs(data.lastKnownPerks.get(perk) - v);
-            return diff <= cfg.getEnforceSyncThreshold();
+            return diff <= cfg.getSyncPerksRule().getThreshold();
         }
 
         return true;
@@ -284,24 +334,24 @@ public class AntiCheat {
         }
 
         CustomNetworkData data = getCustomNetworkData(con, player.getUsername());
-        if (cfg.isEnforceSyncPerks()) {
+        if (cfg.getSyncPerksRule().isEnabled()) {
             if (!data.validatePlayer(player)) {
-                handleViolation(con, packet, "[enforceSyncPerks] Failed to validate player");
+                handleViolation(con, "[enforceSyncPerks] Failed to validate player", cfg.getSyncPerksRule().getAction());
                 return;
             }
 
             if (!validateSyncPerk(data, Perk.SNEAK, sneak)) {
-                handleViolation(con, packet, "[enforceSyncPerks] Failed to validate sneak");
+                handleViolation(con, "[enforceSyncPerks] Failed to validate sneak", cfg.getSyncPerksRule().getAction());
                 return;
             }
 
             if (!validateSyncPerk(data, Perk.STR, str)) {
-                handleViolation(con, packet, "[enforceSyncPerks] Failed to validate str");
+                handleViolation(con, "[enforceSyncPerks] Failed to validate str", cfg.getSyncPerksRule().getAction());
                 return;
             }
 
             if (!validateSyncPerk(data, Perk.FIT, fit)) {
-                handleViolation(con, packet, "[enforceSyncPerks] Failed to validate fit");
+                handleViolation(con, "[enforceSyncPerks] Failed to validate fit", cfg.getSyncPerksRule().getAction());
                 return;
             }
         }
@@ -315,8 +365,8 @@ public class AntiCheat {
      * Enforces violations for teleporting.
      */
     private void enforceTeleport(UdpConnection con, ZomboidNetData packet) {
-        if (cfg.isEnforceTeleport()) {
-            handleViolation(con, packet, "[enforceTeleport] Not allowed to teleport");
+        if (cfg.getTeleportRule().isEnabled()) {
+            handleViolation(con, "[enforceTeleport] Not allowed to teleport", cfg.getTeleportRule().getAction());
             return;
         }
     }
@@ -325,8 +375,8 @@ public class AntiCheat {
      * Enforces violations for sending extra information.
      */
     private void enforceExtraInfo(UdpConnection con, ZomboidNetData packet) {
-        if (cfg.isEnforceExtraInfo()) {
-            handleViolation(con, packet, "[enforceExtraInfo] Not allowed to send extra info");
+        if (cfg.getExtraInfoRule().isEnabled()) {
+            handleViolation(con, "[enforceExtraInfo] Not allowed to send extra info", cfg.getExtraInfoRule().getAction());
             return;
         }
     }
@@ -339,16 +389,16 @@ public class AntiCheat {
         dp.parse(packet.buffer);
 
         IsoPlayer target = dp.getPlayer();
-        if (cfg.isEnforcePlayerDeaths()) {
+        if (cfg.getPlayerDeathsRule().isEnabled()) {
             if (!playerBelongsToConnection(con, target)) {
-                handleViolation(con, packet, "[enforceSendPlayerDeath] Sending player death to other player");
+                handleViolation(con, "[enforceSendPlayerDeath] Sending player death to other player", cfg.getPlayerDeathsRule().getAction());
                 return;
             }
         }
 
-        if (cfg.isEnforceDistance()) {
+        if (cfg.getDistanceRule().isEnabled()) {
             if (!distanceCheck(con, target.x, target.y, target.z, 100.f)) {
-                handleViolation(con, packet, "[enforceSendPlayerDeath] Player too far from hit");
+                handleViolation(con, "[enforceSendPlayerDeath] Player too far from hit", cfg.getDistanceRule().getAction());
                 return;
             }
         }
@@ -360,8 +410,8 @@ public class AntiCheat {
     private void enforceAdditionalPain(UdpConnection con, ZomboidNetData packet) {
         short id = packet.buffer.getShort();
         IsoPlayer target = GameServer.IDToPlayerMap.get(id);
-        if (cfg.isEnforceAdditionalPain()) {
-            handleViolation(con, packet, "[enforceAdditionalPain] Sending additional pain packet");
+        if (cfg.getAdditionalPainRule().isEnabled()) {
+            handleViolation(con, "[enforceAdditionalPain] Sending additional pain packet", cfg.getAdditionalPainRule().getAction());
             return;
         }
 
@@ -370,9 +420,9 @@ public class AntiCheat {
             return;
         }
 
-        if (cfg.isEnforceDistance()) {
-            if (!distanceCheck(con, target.x, target.y, target.z, 100.f)) {
-                handleViolation(con, packet, "[enforceAdditionalPain] Player too far away");
+        if (cfg.getDistanceRule().isEnabled()) {
+            if (!distanceCheck(con, target.x, target.y, target.z, cfg.getDistanceRule().getThreshold())) {
+                handleViolation(con, "[enforceAdditionalPain] Player too far away", cfg.getDistanceRule().getAction());
                 return;
             }
         }
@@ -389,9 +439,9 @@ public class AntiCheat {
             return;
         }
 
-        if (cfg.isEnforceDistance()) {
-            if (!distanceCheck(con, target.x, target.y, target.z, 100.f)) {
-                handleViolation(con, packet, "[enforceRemoveGlass] Player too far away");
+        if (cfg.getDistanceRule().isEnabled()) {
+            if (!distanceCheck(con, target.x, target.y, target.z, cfg.getDistanceRule().getThreshold())) {
+                handleViolation(con, "[enforceRemoveGlass] Player too far away", cfg.getDistanceRule().getAction());
                 return;
             }
         }
@@ -408,9 +458,9 @@ public class AntiCheat {
             return;
         }
 
-        if (cfg.isEnforceDistance()) {
-            if (!distanceCheck(con, target.x, target.y, target.z, 100.f)) {
-                handleViolation(con, packet, "[enforceRemoveBullet] Player too far away");
+        if (cfg.getDistanceRule().isEnabled()) {
+            if (!distanceCheck(con, target.x, target.y, target.z, cfg.getDistanceRule().getThreshold())) {
+                handleViolation(con, "[enforceRemoveBullet] Player too far away", cfg.getDistanceRule().getAction());
                 return;
             }
         }
@@ -427,9 +477,9 @@ public class AntiCheat {
             return;
         }
 
-        if (cfg.isEnforceDistance()) {
+        if (cfg.getDistanceRule().isEnabled()) {
             if (!distanceCheck(con, target.x, target.y, target.z, 100.f)) {
-                handleViolation(con, packet, "[enforceCleanBurn] Player too far away");
+                handleViolation(con, "[enforceCleanBurn] Player too far away", cfg.getDistanceRule().getAction());
                 return;
             }
         }
@@ -446,9 +496,9 @@ public class AntiCheat {
             return;
         }
 
-        if (cfg.isEnforceSyncClothing()) {
+        if (cfg.getSyncClothingRule().isEnabled()) {
             if (!playerBelongsToConnection(con, target)) {
-                handleViolation(con, packet, "[enforceSyncClothing] Sending clothing change to other player");
+                handleViolation(con, "[enforceSyncClothing] Sending clothing change to other player", cfg.getSyncClothingRule().getAction());
                 return;
             }
         }
@@ -465,9 +515,9 @@ public class AntiCheat {
             float y = (float) squareY.get(sq);
             float z = (float) squareZ.get(sq);
 
-            if (cfg.isEnforceDistance()) {
+            if (cfg.getDistanceRule().isEnabled()) {
                 if (!distanceCheck(con, x, y, z, 100.f)) {
-                    handleViolation(con, packet, "[enforcePlayerHitSquarePacket] Player too far from hit");
+                    handleViolation(con, "[enforcePlayerHitSquarePacket] Player too far from hit", cfg.getDistanceRule().getAction());
                     return;
                 }
             }
@@ -485,9 +535,9 @@ public class AntiCheat {
             Player plr = (Player) playerHitPlayerPacketTarget.get(hp);
             IsoPlayer pl = (IsoPlayer) playerPlayer.get(plr);
 
-            if (cfg.isEnforceDistance()) {
+            if (cfg.getDistanceRule().isEnabled()) {
                 if (!distanceCheck(con, pl.x, pl.y, pl.z, 100.f)) {
-                    handleViolation(con, packet, "[enforcePlayerHitPlayerPacket] Player too far from hit");
+                    handleViolation(con, "[enforcePlayerHitPlayerPacket] Player too far from hit", cfg.getDistanceRule().getAction());
                     return;
                 }
             }
@@ -505,9 +555,9 @@ public class AntiCheat {
             Zombie zombie = (Zombie) playerHitZombiePacketTarget.get(hp);
             IsoZombie zm = (IsoZombie) zombieZombie.get(zombie);
 
-            if (cfg.isEnforceDistance()) {
+            if (cfg.getDistanceRule().isEnabled()) {
                 if (!distanceCheck(con, zm.x, zm.y, zm.z, 100.f)) {
-                    handleViolation(con, packet, "[enforcePlayerHitZombiePacket] Player too far from hit");
+                    handleViolation(con, "[enforcePlayerHitZombiePacket] Player too far from hit", cfg.getDistanceRule().getAction());
                     return;
                 }
             }
@@ -527,7 +577,7 @@ public class AntiCheat {
             if (data != null) {
                 RateLimiter limiter = data.createRateLimiter(id, cfg.getRateLimit(id));
                 if (!limiter.check()) {
-                    handleViolation(con, packet, "Rate limiting");
+                    handleViolation(con, "Rate limiting", AntiCheatAction.DISCONNECT);
                     return;
                 }
             }
