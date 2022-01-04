@@ -20,8 +20,7 @@ public class CheatWindow extends NewWindow {
     private long nextPacketTime = 0;
 
     public CheatWindow() {
-        super(15, 15, 300, 300, false);
-        setRenderClippedChildren(true);
+        super(15, 15, 315, 1200, false);
 
         AddChild(nameBox = new UITextBox2(UIFont.Small, 0, 0, 300, 20, ZomboidApi.DISPLAY_NAME, true));
         nameBox.setEditable(false);
