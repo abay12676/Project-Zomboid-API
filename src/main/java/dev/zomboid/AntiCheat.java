@@ -300,7 +300,7 @@ public class AntiCheat {
         }
 
         reportToDiscord("## Violation generated for player __" + name + "__  \nSteam: __" + steam + "__  \nReason: __" + reason + "__");
-
+        enforceAction(con, reason, action);
     }
 
     /**
