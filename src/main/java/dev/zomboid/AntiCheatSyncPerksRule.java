@@ -4,8 +4,14 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * The synchronize perks rule. Used to enforce the player's perk values do not change too much at once.
+ */
 public class AntiCheatSyncPerksRule extends AntiCheatRule {
 
+    /**
+     * The maximum difference between the new value and the old value, in order for the sync to be valid.
+     */
     @Getter
     @Setter
     private int threshold = 10;

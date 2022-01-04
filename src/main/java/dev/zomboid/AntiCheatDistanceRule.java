@@ -3,8 +3,14 @@ package dev.zomboid;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * The distance rule. Used to enforce player interactions are within a certain distance.
+ */
 public class AntiCheatDistanceRule extends AntiCheatRule {
 
+    /**
+     * The distance the player must be in, in order for the interaction to be valid.
+     */
     @Getter
     @Setter
     private float threshold = 10.f;
