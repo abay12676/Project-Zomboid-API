@@ -10,11 +10,11 @@ This API comes with a small anti-cheat for your server, as the game is missing a
 	"syncPerksRule": {
       "enabled": "false"
     },
-	"enforceTeleport": {
+	"teleportRule": {
       "enabled": "true",
       "action": "DISCONNECT"
     },
-	"enforceExtraInfo": {
+	"extraInfoRule": {
       "enabled": "true",
       "action": "DISCONNECT"
     },
@@ -30,6 +30,10 @@ This API comes with a small anti-cheat for your server, as the game is missing a
       "enabled": "true",
       "action": "DISCONNECT",
       "threshold": 100.0
+    },
+    "chatRule": {
+      "enabled": "true",
+      "action": "DISCONNECT"
     },
 	"rateLimits": [
 		{

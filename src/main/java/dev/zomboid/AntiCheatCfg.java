@@ -17,55 +17,62 @@ public class AntiCheatCfg {
     public String discordApi = "";
 
     /**
-     * If true, the player ids in packets will be overwritten with the player id from the UDP connection
+     * The player ids in packets will be overwritten with the player id from the UDP connection
      * if a valid player id is not found in the UDP connection's player array.
      */
     @SerializedName("packetOwnershipRule")
     private AntiCheatRule packetOwnershipRule = new AntiCheatRule(false);
 
     /**
-     * If true, the sync perks packet will be validated to ensure no cheating is detected.
+     * The sync perks packet will be validated to ensure no cheating is detected.
      */
     @SerializedName("syncPerksRule")
     private AntiCheatSyncPerksRule syncPerksRule = new AntiCheatSyncPerksRule(false);
 
     /**
-     * If true, teleports will cause violations unless the player is a mod/admin.
+     * Teleports will cause violations unless the player is a mod/admin.
      */
     @SerializedName("teleportRule")
     private AntiCheatRule teleportRule = new AntiCheatRule(false);
 
     /**
-     * If true, extra info packets will cause violations unless the player is a mod/admin.
+     * Extra info packets will cause violations unless the player is a mod/admin.
      */
     @SerializedName("extraInfoRule")
     private AntiCheatRule extraInfoRule = new AntiCheatRule(true);
 
     /**
-     * If true, player death packets must be a player associated with the network connection or a violation will be caused.
+     * Player death packets must be a player associated with the network connection or a violation will be caused.
      */
     @SerializedName("playerDeathsRule")
     private AntiCheatRule playerDeathsRule = new AntiCheatRule(false);
 
     /**
-     * If true, additional pain packets will cause a violation.
+     * Additional pain packets will cause a violation.
      */
     @SerializedName("additionalPainRule")
     private AntiCheatRule additionalPainRule = new AntiCheatRule(false);
 
     /**
-     * If true, player clothing synchronization requests must be associated with the network connection or a violation
+     * Player clothing synchronization requests must be associated with the network connection or a violation
      * will be caused.
      */
     @SerializedName("syncClothingRule")
     private AntiCheatRule syncClothingRule = new AntiCheatRule(false);
 
     /**
-     * If true, checks will be put in various places such as interacting with other players,
+     * Checks will be put in various places such as interacting with other players,
      * zombies, objects, etc. Being too far away when interacting will cause a violation.
      */
     @SerializedName("distanceRule")
     private AntiCheatDistanceRule distanceRule = new AntiCheatDistanceRule(false);
+
+    /**
+     * Checks will be put in various places in order to ensure that chat messages are
+     * received with a valid username attached.
+     */
+    @SerializedName("chatRule")
+    private AntiCheatRule chatRule = new AntiCheatRule(false);
 
     /**
      * A list of rate limits to apply.
@@ -104,6 +111,7 @@ public class AntiCheatCfg {
                 "\n additionalPainRule=" + additionalPainRule +
                 "\n syncClothingRule=" + syncClothingRule +
                 "\n distanceRule=" + distanceRule +
+                "\n chatRule=" + chatRule +
                 "\n rateLimits=" + rateLimits +
                 '}';
     }

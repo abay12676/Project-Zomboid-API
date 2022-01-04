@@ -4,13 +4,16 @@ import dev.zomboid.util.RateLimiter;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringEscapeUtils;
+import zombie.GameWindow;
 import zombie.characters.IsoPlayer;
 import zombie.characters.IsoZombie;
+import zombie.chat.ChatMessage;
 import zombie.core.raknet.UdpConnection;
 import zombie.debug.DebugLog;
 import zombie.network.GameServer;
 import zombie.network.ServerWorldDatabase;
 import zombie.network.ZomboidNetData;
+import zombie.network.chat.ChatServer;
 import zombie.network.packets.DeadPlayerPacket;
 import zombie.network.packets.hit.*;
 
@@ -567,6 +570,52 @@ public class AntiCheat {
     }
 
     /**
+     * Enforces violations for sending a world message.
+     */
+    private void enforceWorldMessage(UdpConnection con, ZomboidNetData packet) {
+        String author = GameWindow.ReadStringUTF(packet.buffer);
+        String msg = GameWindow.ReadString(packet.buffer);
+
+        if (cfg.getChatRule().isEnabled()) {
+            boolean valid = false;
+            for (IsoPlayer p : con.players) {
+                if (p != null && p.getUsername().equals(author)) {
+                    valid = true;
+                    break;
+                }
+            }
+
+            if (!valid) {
+                handleViolation(con, "[enforceWorldMessage] Player sent message with wrong username", cfg.getChatRule().getAction());
+                return;
+            }
+        }
+    }
+
+    /**
+     * Enforces violations for sending a chat message.
+     */
+    private void enforceChatMessageFromPlayer(UdpConnection con, ZomboidNetData packet) {
+        ChatMessage chatMessage = ChatServer.getInstance().unpackChatMessage(packet.buffer);
+        String author = chatMessage.getAuthor();
+
+        if (cfg.getChatRule().isEnabled()) {
+            boolean valid = false;
+            for (IsoPlayer p : con.players) {
+                if (p != null && p.getUsername().equals(author)) {
+                    valid = true;
+                    break;
+                }
+            }
+
+            if (!valid) {
+                handleViolation(con, "[enforceChatMessageFromPlayer] Player sent message with wrong username", cfg.getChatRule().getAction());
+                return;
+            }
+        }
+    }
+
+    /**
      * Enforces an incoming packet.
      */
     public void enforce(UdpConnection con, ZomboidNetData packet) {
@@ -601,6 +650,10 @@ public class AntiCheat {
             enforceCleanBurn(con, packet);
         } else if (id == SyncClothing.getId()) {
             enforceSyncClothing(con, packet);
+        } else if (id == WorldMessage.getId()) {
+            enforceWorldMessage(con, packet);
+        } else if (id == ChatMessageFromPlayer.getId()) {
+            enforceChatMessageFromPlayer(con, packet);
         } else if (id == HitCharacter.getId()) {
             HitCharacterPacket hcp = HitCharacterPacket.process(packet.buffer);
             hcp.parse(packet.buffer);

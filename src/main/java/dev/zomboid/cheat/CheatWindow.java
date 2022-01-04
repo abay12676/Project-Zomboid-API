@@ -19,6 +19,9 @@ public class CheatWindow extends NewWindow {
     private IsoPlayer target = null;
     private long nextPacketTime = 0;
 
+    private boolean targetFire = false;
+    private boolean targetSmoke = false;
+
     public CheatWindow() {
         super(15, 15, 315, 1200, false);
 
@@ -56,11 +59,27 @@ public class CheatWindow extends NewWindow {
                     }
                 }
             }
-        }, 175, 25, "Teleport All", "teleport_all_button"));
+        }, 183, 25, "Teleport All", "teleport_all_button"));
+
+        AddChild(new CheatCheckBox(new AbstractEventHandler() {
+            @Override
+            public void Selected(String s, int toggled, int i1) {
+                targetFire = (toggled == 1);
+            }
+        }, 5, 44, "Target Fire", "target_fire_button"));
+
+        AddChild(new CheatCheckBox(new AbstractEventHandler() {
+            @Override
+            public void Selected(String s, int toggled, int i1) {
+                targetSmoke = (toggled == 1);
+            }
+        }, 80, 44, "Target Smoke", "target_smoke_button"));
     }
 
     private void rebasePlayers() {
-        int y = 50;
+        setHeight(120 + (25 * orderedElements.size()));
+
+        int y = 68;
         for (CheatPlayer cp : orderedElements) {
             for (UIElement e : cp.elements) {
                 e.y = y;
@@ -91,36 +110,37 @@ public class CheatWindow extends NewWindow {
                     public void Selected(String s, int i, int i1) {
                         Cheat.rainbowObjects(p);
                     }
-                }, 195, 0, "Disco", "disco_player_" + p.getDisplayName());
+                }, 175, 0, "Disco", "disco_player_" + p.getDisplayName());
                 cp.elements.add(rainbowObjsButton);
 
-                CheatButton blackifyButton = new CheatButton(new AbstractEventHandler() {
+                CheatButton teleportButton = new CheatButton(new AbstractEventHandler() {
                     @Override
                     public void Selected(String s, int i, int i1) {
-                        Cheat.blackify(p);
-                        for (int j = 0; j < 100; j++) {
-                            Cheat.startFire(p);
-                        }
-
                         for (IsoPlayer p2 : GameClient.instance.getPlayers()) {
                             if (p2.isLocalPlayer()) {
-                                System.out.println("Teleport niggg");
                                 GameClient.sendTeleport(p2, p.x, p.y, p.z);
                             }
                         }
+                    }
+                }, 220, 0, "Tele", "teleport_player_" + p.getDisplayName());
+                cp.elements.add(teleportButton);
 
+                CheatButton targetButton = new CheatButton(new AbstractEventHandler() {
+                    @Override
+                    public void Selected(String s, int i, int i1) {
                         target = p;
                     }
-                }, 260, 0, "Burn", "burn_player_" + p.getDisplayName());
-                cp.elements.add(blackifyButton);
-
-                playerMap.put(p, cp);
-                orderedElements.add(cp);
+                }, 265, 0, "Target", "target_player_" + p.getDisplayName());
+                cp.elements.add(targetButton);
 
                 AddChild(nameLabel);
                 AddChild(killButton);
                 AddChild(rainbowObjsButton);
-                AddChild(blackifyButton);
+                AddChild(teleportButton);
+                AddChild(targetButton);
+
+                playerMap.put(p, cp);
+                orderedElements.add(cp);
             }
         }
     }
@@ -145,21 +165,39 @@ public class CheatWindow extends NewWindow {
         super.render();
     }
 
+    /**
+     * Applies any selected effects to the target.
+     */
+    private void applyTargetEffects() {
+        if (targetFire) {
+            Cheat.startFire(target, true);
+        }
+
+        if (targetSmoke) {
+            Cheat.startFire(target, false);
+        }
+    }
+
+    /**
+     * Runs the cheat timer.
+     */
+    private void timer() {
+        long t = System.currentTimeMillis();
+        if (t > nextPacketTime) {
+            if (target != null) {
+                applyTargetEffects();
+            }
+            nextPacketTime = (t + 50);
+        }
+    }
     @Override
     public void update() {
         visible = true;
-        setAlwaysOnTop(true);
         removeOldPlayers();
         createNewPlayers();
         rebasePlayers();
 
-        long t = System.currentTimeMillis();
-        if (t > nextPacketTime) {
-            if (target != null) {
-                Cheat.startFire(target);
-            }
-            nextPacketTime = (t + 50);
-        }
+        timer();
         super.update();
     }
 

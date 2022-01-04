@@ -37,7 +37,6 @@ public class Cheat {
 
     public static void damageBody(IsoPlayer player, BodyPartType part, float damage) {
         GameClient.instance.sendAdditionalPain(player.OnlineID, part.index(), damage);
-
     }
 
     public static void killAllZombies() {
@@ -64,27 +63,9 @@ public class Cheat {
         }
     }
 
-    public static void blackify(IsoPlayer player) {
-        player.getHumanVisual().setHairColor(new ImmutableColor(0, 0, 0, 255));
-        player.getHumanVisual().setBeardColor(new ImmutableColor(0, 0, 0, 255));
-        player.getHumanVisual().setSkinColor(new ImmutableColor(0, 0, 0, 255));
-        player.getHumanVisual().setBodyHairIndex(0);
-        player.getHumanVisual().setHole(BloodBodyPartType.Groin);
-        player.getHumanVisual().setDirt(BloodBodyPartType.Groin, 100.f);
-
-        GameClient.instance.sendVisual(player);
-    }
-
-    public static void fuck(IsoPlayer player) {
-        player.getHumanVisual().setBeardModel("");
-        player.getHumanVisual().setHairModel("");
-    }
-
-    public static void startFire(IsoPlayer player) {
+    public static void startFire(IsoPlayer player, boolean smoke) {
         IsoGridSquare square = player.getSquare();
         if (square != null) {
-            IsoFire f;
-
             ByteBufferWriter byteBufferWriter = GameClient.connection.startPacket();
             PacketTypes.PacketType.StartFire.doPacket(byteBufferWriter);
             byteBufferWriter.putInt(square.getX());
@@ -93,10 +74,9 @@ public class Cheat {
             byteBufferWriter.putInt(10000); // energy
             byteBufferWriter.putByte((byte) 1); // idk not used
             byteBufferWriter.putInt(10000); // life
-            byteBufferWriter.putByte((byte) 0); // idk not used
+            byteBufferWriter.putByte((byte) (smoke ? 1 : 0)); // smoke
             PacketTypes.PacketType.StartFire.send(GameClient.connection);
             System.out.println("Fire!!!");
         }
-
     }
 }
