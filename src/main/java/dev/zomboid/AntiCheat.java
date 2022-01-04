@@ -584,7 +584,7 @@ public class AntiCheat {
                 player = p;
             }
 
-            return player == p;
+            return player.getUsername().equals(p.getUsername());
         }
     }
 }
