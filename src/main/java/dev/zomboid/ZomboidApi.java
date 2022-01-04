@@ -5,6 +5,10 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class ZomboidApi {
 
+    /**
+     * The current version.
+     */
+    public static final String VERSION = "0.0.3";
 
     /**
      * The display name on the UI.
