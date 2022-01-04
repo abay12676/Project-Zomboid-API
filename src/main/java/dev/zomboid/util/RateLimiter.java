@@ -1,4 +1,4 @@
-package dev.zomboid;
+package dev.zomboid.util;
 
 import lombok.Getter;
 

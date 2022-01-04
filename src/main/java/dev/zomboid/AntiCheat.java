@@ -1,5 +1,6 @@
 package dev.zomboid;
 
+import dev.zomboid.util.RateLimiter;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringEscapeUtils;
