@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class CheatWindow extends NewWindow {
 
-    private final UITextBox2 nameBox;
     private final List<CheatPlayer> orderedElements = new LinkedList<>();
     private final Map<IsoPlayer, CheatPlayer> playerMap = new HashMap<>();
     private long target;
@@ -42,7 +41,8 @@ public class CheatWindow extends NewWindow {
     public CheatWindow() {
         super(15, 15, 315, 1200, false);
 
-        AddChild(nameBox = new UITextBox2(UIFont.Small, 0, 0, 300, 20, ZomboidApi.DISPLAY_NAME, true));
+        UITextBox2 nameBox = new UITextBox2(UIFont.Small, 0, 0, 300, 20, ZomboidApi.DISPLAY_NAME, true);
+        AddChild(nameBox);
         nameBox.setEditable(false);
 
         AtomicInteger x = new AtomicInteger(5);
@@ -136,18 +136,23 @@ public class CheatWindow extends NewWindow {
             if (!playerMap.containsKey(p)) {
                 CheatPlayer cp = new CheatPlayer();
 
-                UITextBox2 nameLabel = new UITextBox2(UIFont.Small, 5, 0, 120, 20, p.getDisplayName(), true);
+                int x = 5;
+                UITextBox2 nameLabel = new UITextBox2(UIFont.Small, x, 0, 120, 20, p.getDisplayName(), true);
                 cp.elements.add(nameLabel);
+                x += nameLabel.getWidth();
+                x += 5;
 
                 CheatButton killButton = new CheatButton(new AbstractEventHandler() {
                     @Override
                     public void Selected(String s, int i, int i1) {
                         Cheat.kill(p);
                     }
-                }, 130, 0, "Kill", "kill_player_" + p.getDisplayName());
+                }, x, 0, "Kill", "kill_player_" + p.getDisplayName());
                 cp.elements.add(killButton);
+                x += killButton.getWidth();
+                x += 5;
 
-                CheatButton rainbowObjsButton = new CheatButton(new AbstractEventHandler() {
+                CheatButton lagButton = new CheatButton(new AbstractEventHandler() {
                     @Override
                     public void Selected(String s, int i, int i1) {
                         float scale = 1.f;
@@ -155,18 +160,12 @@ public class CheatWindow extends NewWindow {
                         float offY = (ThreadLocalRandom.current().nextFloat() * scale) - scale;
                         float offZ = (ThreadLocalRandom.current().nextFloat() * scale) - scale;
 
-                                /*IsoPlayer roulette = GameClient.instance.getPlayers().get(
-                                        ThreadLocalRandom.current().nextInt(
-                                                GameClient.instance.getPlayers().size()
-                                        )
-                                );*/
-
-                        //if (!roulette.isLocalPlayer()) {
                         GameClient.sendTeleport(p, p.x + offX, p.y + offY, p.z + offZ);
-                        //}
                     }
-                }, 175, 0, "Disco", "disco_player_" + p.getDisplayName());
-                cp.elements.add(rainbowObjsButton);
+                }, x, 0, "Lag", "lag_player_" + p.getDisplayName());
+                cp.elements.add(lagButton);
+                x += lagButton.getWidth();
+                x += 5;
 
                 CheatButton teleportButton = new CheatButton(new AbstractEventHandler() {
                     @Override
@@ -177,20 +176,24 @@ public class CheatWindow extends NewWindow {
                             }
                         }
                     }
-                }, 220, 0, "Tele", "teleport_player_" + p.getDisplayName());
+                }, x, 0, "Tele", "teleport_player_" + p.getDisplayName());
                 cp.elements.add(teleportButton);
+                x += teleportButton.getWidth();
+                x += 5;
 
                 CheatButton targetButton = new CheatButton(new AbstractEventHandler() {
                     @Override
                     public void Selected(String s, int i, int i1) {
                         target = p.getSteamID();
                     }
-                }, 265, 0, "Target", "target_player_" + p.getDisplayName());
+                }, x, 0, "Target", "target_player_" + p.getDisplayName());
                 cp.elements.add(targetButton);
+                x += targetButton.getWidth();
+                x += 5;
 
                 AddChild(nameLabel);
                 AddChild(killButton);
-                AddChild(rainbowObjsButton);
+                AddChild(lagButton);
                 AddChild(teleportButton);
                 AddChild(targetButton);
 
