@@ -10,17 +10,34 @@ import zombie.ui.UIFont;
 import zombie.ui.UITextBox2;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class CheatWindow extends NewWindow {
 
     private final UITextBox2 nameBox;
     private final List<CheatPlayer> orderedElements = new LinkedList<>();
     private final Map<IsoPlayer, CheatPlayer> playerMap = new HashMap<>();
-    private IsoPlayer target = null;
+    private long target;
     private long nextPacketTime = 0;
 
     private boolean targetFire = false;
     private boolean targetSmoke = false;
+    private boolean targetKill = false;
+
+    private void pushButtonHorizontal(AtomicInteger x, int y, String text, String name, AbstractEventHandler handler) {
+        CheatButton button = new CheatButton(handler, x.get(), y, text, name);
+        AddChild(button);
+        x.addAndGet(button.getWidth().intValue());
+        x.addAndGet(5);
+    }
+
+    private void pushCheckBoxHorizontal(AtomicInteger x, int y, String text, String name, AbstractEventHandler handler) {
+        CheatCheckBox box = new CheatCheckBox(handler, x.get(), y, text, name);
+        AddChild(box);
+        x.addAndGet(box.getWidth().intValue());
+        x.addAndGet(5);
+    }
 
     public CheatWindow() {
         super(15, 15, 315, 1200, false);
@@ -28,21 +45,22 @@ public class CheatWindow extends NewWindow {
         AddChild(nameBox = new UITextBox2(UIFont.Small, 0, 0, 300, 20, ZomboidApi.DISPLAY_NAME, true));
         nameBox.setEditable(false);
 
-        AddChild(new CheatButton(new AbstractEventHandler() {
+        AtomicInteger x = new AtomicInteger(5);
+        pushButtonHorizontal(x, 25, "Kill All Players", "kill_all_players_button", new AbstractEventHandler() {
             @Override
             public void Selected(String s, int i, int i1) {
                 Cheat.killAllPlayers();
             }
-        }, 5, 25, "Kill All Players", "kill_all_players_button"));
+        });
 
-        AddChild(new CheatButton(new AbstractEventHandler() {
+        pushButtonHorizontal(x, 25, "Kill All Zombies", "kill_all_zombies_button", new AbstractEventHandler() {
             @Override
             public void Selected(String s, int i, int i1) {
                 Cheat.killAllZombies();
             }
-        }, 90, 25, "Kill All Zombies", "kill_all_zombies_button"));
+        });
 
-        AddChild(new CheatButton(new AbstractEventHandler() {
+        pushButtonHorizontal(x, 25, "Teleport All", "teleport_all_button", new AbstractEventHandler() {
             @Override
             public void Selected(String s, int i, int i1) {
                 IsoPlayer local = null;
@@ -59,21 +77,45 @@ public class CheatWindow extends NewWindow {
                     }
                 }
             }
-        }, 183, 25, "Teleport All", "teleport_all_button"));
+        });
 
-        AddChild(new CheatCheckBox(new AbstractEventHandler() {
+        x.set(5);
+        pushCheckBoxHorizontal(x, 25, "Target Fire", "target_fire_button", new AbstractEventHandler() {
             @Override
             public void Selected(String s, int toggled, int i1) {
                 targetFire = (toggled == 1);
             }
-        }, 5, 44, "Target Fire", "target_fire_button"));
+        });
 
-        AddChild(new CheatCheckBox(new AbstractEventHandler() {
+        pushCheckBoxHorizontal(x, 25, "Target Smoke", "target_smoke_button", new AbstractEventHandler() {
             @Override
             public void Selected(String s, int toggled, int i1) {
                 targetSmoke = (toggled == 1);
             }
-        }, 80, 44, "Target Smoke", "target_smoke_button"));
+        });
+
+        pushCheckBoxHorizontal(x, 25, "Target Kill", "target_kill_button", new AbstractEventHandler() {
+            @Override
+            public void Selected(String s, int toggled, int i1) {
+                targetKill = (toggled == 1);
+            }
+        });
+
+        pushCheckBoxHorizontal(x, 25, "God", "god_button", new AbstractEventHandler() {
+            @Override
+            public void Selected(String s, int toggled, int i1) {
+                for (IsoPlayer p : GameClient.instance.getPlayers()) {
+                    if (p.isLocalPlayer()) {
+                        p.setGodMod(toggled == 1);
+                        p.setNoClip(toggled == 1);
+                        p.setCanHearAll(toggled == 1);
+                        p.setInvisible(toggled == 1);
+                        p.setGhostMode(toggled == 1);
+                        GameClient.sendPlayerExtraInfo(p);
+                    }
+                }
+            }
+        });
     }
 
     private void rebasePlayers() {
@@ -108,7 +150,20 @@ public class CheatWindow extends NewWindow {
                 CheatButton rainbowObjsButton = new CheatButton(new AbstractEventHandler() {
                     @Override
                     public void Selected(String s, int i, int i1) {
-                        Cheat.rainbowObjects(p);
+                        float scale = 1.f;
+                        float offX = (ThreadLocalRandom.current().nextFloat() * scale) - scale;
+                        float offY = (ThreadLocalRandom.current().nextFloat() * scale) - scale;
+                        float offZ = (ThreadLocalRandom.current().nextFloat() * scale) - scale;
+
+                                /*IsoPlayer roulette = GameClient.instance.getPlayers().get(
+                                        ThreadLocalRandom.current().nextInt(
+                                                GameClient.instance.getPlayers().size()
+                                        )
+                                );*/
+
+                        //if (!roulette.isLocalPlayer()) {
+                        GameClient.sendTeleport(p, p.x + offX, p.y + offY, p.z + offZ);
+                        //}
                     }
                 }, 175, 0, "Disco", "disco_player_" + p.getDisplayName());
                 cp.elements.add(rainbowObjsButton);
@@ -128,7 +183,7 @@ public class CheatWindow extends NewWindow {
                 CheatButton targetButton = new CheatButton(new AbstractEventHandler() {
                     @Override
                     public void Selected(String s, int i, int i1) {
-                        target = p;
+                        target = p.getSteamID();
                     }
                 }, 265, 0, "Target", "target_player_" + p.getDisplayName());
                 cp.elements.add(targetButton);
@@ -165,16 +220,32 @@ public class CheatWindow extends NewWindow {
         super.render();
     }
 
+    private IsoPlayer findTarget() {
+        for (IsoPlayer p : GameClient.instance.getPlayers()) {
+            if (p.getSteamID() == target) {
+                return p;
+            }
+        }
+        return null;
+    }
+
     /**
      * Applies any selected effects to the target.
      */
     private void applyTargetEffects() {
-        if (targetFire) {
-            Cheat.startFire(target, true);
-        }
+        IsoPlayer t = findTarget();
+        if (t != null) {
+            if (targetFire) {
+                Cheat.startFire(t, true);
+            }
 
-        if (targetSmoke) {
-            Cheat.startFire(target, false);
+            if (targetSmoke) {
+                Cheat.startFire(t, false);
+            }
+
+            if (targetKill) {
+                Cheat.kill(t);
+            }
         }
     }
 
@@ -184,12 +255,11 @@ public class CheatWindow extends NewWindow {
     private void timer() {
         long t = System.currentTimeMillis();
         if (t > nextPacketTime) {
-            if (target != null) {
-                applyTargetEffects();
-            }
-            nextPacketTime = (t + 50);
+            applyTargetEffects();
+            nextPacketTime = (t + ThreadLocalRandom.current().nextInt(900, 1400));
         }
     }
+
     @Override
     public void update() {
         visible = true;
