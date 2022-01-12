@@ -94,3 +94,4 @@ This option will apply rate limiting to packets to stop mass griefing attacks, s
 * Place this jar into your PZ root directory
 * Run the jar file with the `-install` parameter on the command line
 * Your server/client is now modded
+

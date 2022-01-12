@@ -15,27 +15,85 @@ import java.util.LinkedList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+/**
+ * Handles patching the game to install/uninstall mods.
+ */
 @RequiredArgsConstructor
 public class GamePatcher {
 
     private final ZomboidClassPath cp;
 
     /**
+     * The descriptor of the annotation to inject into modified classes.
+     */
+    private static final String INJECTED_ANNOTATION = "Ldev/zomboid/Injected;";
+
+    /**
+     * Files to restore when uninstalling.
+     */
+    private static final String[] RESTORATION_FILES = {
+           "zombie/core/Core",
+            "zombie/network/GameClient",
+            "zombie/network/GameServer",
+            "zombie/core/raknet/UdpEngine",
+    };
+
+    /**
+     * Marks a class as injected by putting an injected annotation on it.
+     */
+    private void markInjected(ClassNode cl) {
+        if (cl.visibleAnnotations == null) {
+            cl.visibleAnnotations = new LinkedList<>();
+        }
+
+        cl.visibleAnnotations.add(new AnnotationNode(INJECTED_ANNOTATION));
+    }
+
+    /**
      * Injects code into the Core class.
      */
     private boolean injectCore() throws IOException {
-        ClassNode cl = cp.readClass("zombie/core/Core");
-        cl.visibleAnnotations = new LinkedList<>();
-        cl.visibleAnnotations.add(new AnnotationNode("Ldev/zomboid/Injected;"));
+        String name = "zombie/core/Core";
+        ClassNode cl = cp.readClass(name);
+        markInjected(cl);
 
         MethodNode mt = Inject.findMethod(cl, "EndFrameUI", "()V");
-        if (mt == null) {
-            System.out.println("Failed to find zombie/core/Core#EndFrameUI()V");
-            return false;
-        }
-
         Inject.injectVirtualCallsBegin(mt, "dev/zomboid/interp/RenderingStub", "endFrameUi", "(Lzombie/core/Core;)V");
-        cp.replaceClass("zombie/core/Core", cl);
+        cp.replaceClass(name, cl);
+        return true;
+    }
+
+    /**
+     * Injects code into the GameClient class.
+     */
+    private boolean injectGameClient() throws IOException {
+        String name = "zombie/network/GameClient";
+        ClassNode cl = cp.readClass(name);
+        markInjected(cl);
+
+        MethodNode addIncoming = Inject.findMethod(cl, "addIncoming", "(SLjava/nio/ByteBuffer;)V");
+        addIncoming.instructions.insert(new MethodInsnNode(Opcodes.INVOKESTATIC, "dev/zomboid/interp/NetworkingStub", "addIncomingClient", "(SLjava/nio/ByteBuffer;)V"));
+        addIncoming.instructions.insert(new VarInsnNode(Opcodes.ALOAD, 2));
+        addIncoming.instructions.insert(new VarInsnNode(Opcodes.ILOAD, 1));
+
+        cp.replaceClass(name, cl);
+        return true;
+    }
+
+    /**
+     * Injects code into the UdpEngine class.
+     */
+    private boolean injectUdpEngine() throws IOException {
+        String name = "zombie/core/raknet/UdpEngine";
+        ClassNode cl = cp.readClass(name);
+        markInjected(cl);
+
+        MethodNode decode = Inject.findMethod(cl, "decode", "(Ljava/nio/ByteBuffer;)V");
+        decode.instructions.insert(new MethodInsnNode(Opcodes.INVOKESTATIC, "dev/zomboid/interp/NetworkingStub", "decode", "(Lzombie/core/raknet/UdpEngine;Ljava/nio/ByteBuffer;)V"));
+        decode.instructions.insert(new VarInsnNode(Opcodes.ALOAD, 1));
+        decode.instructions.insert(new VarInsnNode(Opcodes.ALOAD, 0));
+
+        cp.replaceClass(name, cl);
         return true;
     }
 
@@ -43,30 +101,21 @@ public class GamePatcher {
      * Injects code into the GameServer class.
      */
     private boolean injectGameServer() throws IOException {
-        ClassNode cl = cp.readClass("zombie/network/GameServer");
-        cl.visibleAnnotations = new LinkedList<>();
-        cl.visibleAnnotations.add(new AnnotationNode("Ldev/zomboid/Injected;"));
+        String name = "zombie/network/GameServer";
+        ClassNode cl = cp.readClass(name);
+        markInjected(cl);
 
         MethodNode addIncoming = Inject.findMethod(cl, "addIncoming", "(SLjava/nio/ByteBuffer;Lzombie/core/raknet/UdpConnection;)V");
-        if (addIncoming == null) {
-            System.out.println("Failed to find zombie/network/GameServer#addIncoming()V");
-            return false;
-        }
-
         MethodNode main = Inject.findMethod(cl, "main", "([Ljava/lang/String;)V");
-        if (main == null) {
-            System.out.println("Failed to find zombie/network/GameServer#main()V");
-            return false;
-        }
 
-        addIncoming.instructions.insert(new MethodInsnNode(Opcodes.INVOKESTATIC, "dev/zomboid/interp/NetworkingStub", "addIncoming", "(SLjava/nio/ByteBuffer;Lzombie/core/raknet/UdpConnection;)V"));
+        addIncoming.instructions.insert(new MethodInsnNode(Opcodes.INVOKESTATIC, "dev/zomboid/interp/NetworkingStub", "addIncomingServer", "(SLjava/nio/ByteBuffer;Lzombie/core/raknet/UdpConnection;)V"));
         addIncoming.instructions.insert(new VarInsnNode(Opcodes.ALOAD, 2));
         addIncoming.instructions.insert(new VarInsnNode(Opcodes.ALOAD, 1));
         addIncoming.instructions.insert(new VarInsnNode(Opcodes.ILOAD, 0));
 
         Inject.injectStaticCallsBegin(main, "dev/zomboid/interp/CoreStub", "serverMain", "()V");
 
-        cp.replaceClass("zombie/network/GameServer", cl);
+        cp.replaceClass(name, cl);
         return true;
     }
 
@@ -104,15 +153,25 @@ public class GamePatcher {
     /**
      * Attempts to install the mod on top of the game.
      */
-    public void install() throws IOException {
+    public void install(GamePatcherCfg cfg) throws IOException {
         System.out.println("Removing old installation");
         uninstall();
 
         System.out.println("Injecting into Core");
         injectCore();
 
-        System.out.println("Injecting into GameServer");
-        injectGameServer();
+        System.out.println("Injecting into UdpEngine");
+        injectUdpEngine();
+
+        if (cfg.isClient()) {
+            System.out.println("Injecting into GameClient");
+            injectGameClient();
+        }
+
+        if (cfg.isServer()) {
+            System.out.println("Injecting into GameServer");
+            injectGameServer();
+        }
 
         System.out.println("Extracting dependencies from self");
         extractSelf(getClass().getProtectionDomain()
@@ -136,10 +195,9 @@ public class GamePatcher {
      * Attempts to uninstall any existing mod files
      */
     public void uninstall() throws IOException {
-        System.out.println("Replacing Core with backup");
-        removeBackup("zombie/core/Core");
-
-        System.out.println("Replacing GameServer with backup");
-        removeBackup("zombie/network/GameServer");
+        for (String s : RESTORATION_FILES) {
+            System.out.println("Replacing '" + s + "' with backup");
+            removeBackup(s);
+        }
     }
 }

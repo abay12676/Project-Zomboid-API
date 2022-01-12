@@ -16,10 +16,24 @@ public class ToolEp {
         ZomboidClassPath cp = new ZomboidClassPath(".");
         GamePatcher patcher = new GamePatcher(cp);
         switch (args[0]) {
-            case "-install":
+            case "-install": {
+                GamePatcherCfg cfg = new GamePatcherCfg();
+                for (String s : args) {
+                    if (s.equals("-client")) {
+                        cfg.setClient(true);
+                    } else if (s.equals("-server")) {
+                        cfg.setServer(true);
+                    }
+                }
+
+                if (!cfg.isClient() && !cfg.isServer()) {
+                    System.out.println("Please specify either -client or -server to enable all features.");
+                }
+
                 System.out.println("Installing...");
-                patcher.install();
+                patcher.install(cfg);
                 break;
+            }
             case "-uninstall":
                 System.out.println("Uninstalling...");
                 patcher.uninstall();

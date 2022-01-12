@@ -15,6 +15,7 @@ import zombie.network.ServerWorldDatabase;
 import zombie.network.ZomboidNetData;
 import zombie.network.chat.ChatServer;
 import zombie.network.packets.DeadPlayerPacket;
+import zombie.network.packets.DeadZombiePacket;
 import zombie.network.packets.hit.*;
 
 import java.io.IOException;
@@ -401,7 +402,27 @@ public class AntiCheat {
 
         if (cfg.getDistanceRule().isEnabled()) {
             if (!distanceCheck(con, target.x, target.y, target.z, 100.f)) {
-                handleViolation(con, "[enforceSendPlayerDeath] Player too far from hit", cfg.getDistanceRule().getAction());
+                handleViolation(con, "[enforceSendPlayerDeath] Player too far from death", cfg.getDistanceRule().getAction());
+                return;
+            }
+        }
+    }
+
+    /**
+     * Enforces violations for zombie deaths.
+     */
+    private void enforceKillZombie(UdpConnection con, ZomboidNetData packet) {
+       short index = packet.buffer.getShort();
+       boolean fall = packet.buffer.get() != 0;
+
+        IsoZombie z = zombie.network.ServerMap.instance.ZombieMap.get(index);
+        if (z == null) {
+            return;
+        }
+
+        if (cfg.getDistanceRule().isEnabled()) {
+            if (!distanceCheck(con, z.x, z.y, z.z, 100.f)) {
+                handleViolation(con, "[enforceKillZombie] Player too far from death", cfg.getDistanceRule().getAction());
                 return;
             }
         }
@@ -640,6 +661,8 @@ public class AntiCheat {
             enforceExtraInfo(con, packet);
         } else if (id == PlayerDeath.getId()) {
             enforceSendPlayerDeath(con, packet);
+        } else if (id == KillZombie.getId()) {
+            enforceKillZombie(con, packet);
         } else if (id == AdditionalPain.getId()) {
             enforceAdditionalPain(con, packet);
         } else if (id == RemoveGlass.getId()) {

@@ -1,5 +1,6 @@
 package dev.zomboid.util;
 
+import dev.zomboid.FailedFindMethodException;
 import lombok.experimental.UtilityClass;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
@@ -13,13 +14,26 @@ public class Inject {
     /**
      * Finds a method by its name.
      */
-    public static MethodNode findMethod(ClassNode node, String name, String desc) {
+    public static MethodNode findMethodSafe(ClassNode node, String name, String desc) {
         for (MethodNode method : node.methods) {
             if (method.name.equals(name) && method.desc.equals(desc)) {
                 return method;
             }
         }
         return null;
+    }
+
+    /**
+     * Finds a method by its name.
+     */
+    public static MethodNode findMethod(ClassNode node, String name, String desc) {
+        for (MethodNode method : node.methods) {
+            if (method.name.equals(name) && method.desc.equals(desc)) {
+                return method;
+            }
+        }
+
+        throw new FailedFindMethodException("Failed to find " + name + desc + " in " + node.name);
     }
 
     /**

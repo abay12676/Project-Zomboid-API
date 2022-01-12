@@ -1,4 +1,4 @@
-package dev.zomboid.cheat;
+package dev.zomboid.admin;
 
 import zombie.core.Color;
 import zombie.core.textures.Texture;
@@ -7,7 +7,7 @@ import zombie.ui.UIElement;
 import zombie.ui.UIEventHandler;
 import zombie.ui.UIFont;
 
-public class CheatButton extends UIElement {
+public class AdminToolButton extends UIElement {
     public boolean clicked = false;
     public UIElement MessageTarget;
     public boolean mouseOver = false;
@@ -22,7 +22,7 @@ public class CheatButton extends UIElement {
     Texture upRight;
     private UIEventHandler MessageTarget2 = null;
 
-    public CheatButton(UIElement target, float x, float y, String text, String name) {
+    public AdminToolButton(UIElement target, float x, float y, String text, String name) {
         this.x = x;
         this.y = y;
         this.origX = x;
@@ -44,7 +44,7 @@ public class CheatButton extends UIElement {
         this.height = (float) this.downMid.getHeight();
     }
 
-    public CheatButton(UIEventHandler var1, int var2, int var3, String var4, String var5) {
+    public AdminToolButton(UIEventHandler var1, int var2, int var3, String var4, String var5) {
         this.x = var2;
         this.y = var3;
         this.origX = (float) var2;

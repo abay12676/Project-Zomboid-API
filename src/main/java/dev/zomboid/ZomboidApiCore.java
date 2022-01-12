@@ -1,7 +1,7 @@
 package dev.zomboid;
 
 import com.google.gson.Gson;
-import dev.zomboid.cheat.CheatWindow;
+import dev.zomboid.admin.AdminToolWindow;
 import zombie.debug.DebugLog;
 import zombie.ui.UIManager;
 
@@ -29,7 +29,7 @@ public class ZomboidApiCore {
     /**
      * The cheat window, which we use for testing our exploit protections.
      */
-    private CheatWindow window;
+    private AdminToolWindow window;
 
     /**
      * Initializes the server functionality.
@@ -58,7 +58,7 @@ public class ZomboidApiCore {
      * Initializes the client functionality.
      */
     public void initClient() {
-        window = new CheatWindow();
+        window = new AdminToolWindow();
         window.ResizeToFitY = false;
     }
 

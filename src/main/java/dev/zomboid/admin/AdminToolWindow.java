@@ -1,19 +1,30 @@
-package dev.zomboid.cheat;
+package dev.zomboid.admin;
 
 import dev.zomboid.ZomboidApi;
 import dev.zomboid.extend.AbstractEventHandler;
+import lombok.RequiredArgsConstructor;
+import zombie.SoundManager;
+import zombie.characters.BodyDamage.BodyPartType;
 import zombie.characters.IsoPlayer;
+import zombie.chat.ChatManager;
+import zombie.core.network.ByteBufferWriter;
+import zombie.iso.IsoGridSquare;
+import zombie.iso.objects.IsoMannequin;
+import zombie.iso.sprite.IsoSpriteManager;
 import zombie.network.GameClient;
+import zombie.network.PacketTypes;
+import zombie.network.chat.ChatType;
 import zombie.ui.NewWindow;
 import zombie.ui.UIElement;
 import zombie.ui.UIFont;
 import zombie.ui.UITextBox2;
 
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class CheatWindow extends NewWindow {
+public class AdminToolWindow extends NewWindow {
 
     private final List<CheatPlayer> orderedElements = new LinkedList<>();
     private final Map<IsoPlayer, CheatPlayer> playerMap = new HashMap<>();
@@ -24,22 +35,24 @@ public class CheatWindow extends NewWindow {
     private boolean targetSmoke = false;
     private boolean targetKill = false;
 
+    private int yShift = 0;
+
     private void pushButtonHorizontal(AtomicInteger x, int y, String text, String name, AbstractEventHandler handler) {
-        CheatButton button = new CheatButton(handler, x.get(), y, text, name);
+        AdminToolButton button = new AdminToolButton(handler, x.get(), y, text, name);
         AddChild(button);
         x.addAndGet(button.getWidth().intValue());
         x.addAndGet(5);
     }
 
     private void pushCheckBoxHorizontal(AtomicInteger x, int y, String text, String name, AbstractEventHandler handler) {
-        CheatCheckBox box = new CheatCheckBox(handler, x.get(), y, text, name);
+        AdminToolCheckBox box = new AdminToolCheckBox(handler, x.get(), y, text, name);
         AddChild(box);
         x.addAndGet(box.getWidth().intValue());
         x.addAndGet(5);
     }
 
-    public CheatWindow() {
-        super(15, 15, 315, 1200, false);
+    public AdminToolWindow() {
+        super(15, 15, 415, 1200, false);
 
         UITextBox2 nameBox = new UITextBox2(UIFont.Small, 0, 0, 300, 20, ZomboidApi.DISPLAY_NAME, true);
         AddChild(nameBox);
@@ -49,14 +62,20 @@ public class CheatWindow extends NewWindow {
         pushButtonHorizontal(x, 25, "Kill All Players", "kill_all_players_button", new AbstractEventHandler() {
             @Override
             public void Selected(String s, int i, int i1) {
-                Cheat.killAllPlayers();
+                Cheats.killAllPlayers(KillType.NORMAL_HIT);
+            }
+        });
+        pushButtonHorizontal(x, 25, "Hurt All Players", "hurt_all_players_button", new AbstractEventHandler() {
+            @Override
+            public void Selected(String s, int i, int i1) {
+                Cheats.damageBodies(BodyPartType.Groin, 100.f);
             }
         });
 
         pushButtonHorizontal(x, 25, "Kill All Zombies", "kill_all_zombies_button", new AbstractEventHandler() {
             @Override
             public void Selected(String s, int i, int i1) {
-                Cheat.killAllZombies();
+                Cheats.killAllZombies();
             }
         });
 
@@ -73,31 +92,9 @@ public class CheatWindow extends NewWindow {
 
                 if (local != null) {
                     for (IsoPlayer p2 : GameClient.instance.getPlayers()) {
-                        GameClient.sendTeleport(p2, local.x, local.y, local.z);
+                        Cheats.safeTeleport(p2, local.x, local.y, local.z);
                     }
                 }
-            }
-        });
-
-        x.set(5);
-        pushCheckBoxHorizontal(x, 25, "Target Fire", "target_fire_button", new AbstractEventHandler() {
-            @Override
-            public void Selected(String s, int toggled, int i1) {
-                targetFire = (toggled == 1);
-            }
-        });
-
-        pushCheckBoxHorizontal(x, 25, "Target Smoke", "target_smoke_button", new AbstractEventHandler() {
-            @Override
-            public void Selected(String s, int toggled, int i1) {
-                targetSmoke = (toggled == 1);
-            }
-        });
-
-        pushCheckBoxHorizontal(x, 25, "Target Kill", "target_kill_button", new AbstractEventHandler() {
-            @Override
-            public void Selected(String s, int toggled, int i1) {
-                targetKill = (toggled == 1);
             }
         });
 
@@ -116,15 +113,91 @@ public class CheatWindow extends NewWindow {
                 }
             }
         });
+
+        x.set(5);
+        pushCheckBoxHorizontal(x, 45, "Target Fire", "target_fire_button", new AbstractEventHandler() {
+            @Override
+            public void Selected(String s, int toggled, int i1) {
+                targetFire = (toggled == 1);
+            }
+        });
+
+        pushCheckBoxHorizontal(x, 45, "Target Smoke", "target_smoke_button", new AbstractEventHandler() {
+            @Override
+            public void Selected(String s, int toggled, int i1) {
+                targetSmoke = (toggled == 1);
+            }
+        });
+
+        pushCheckBoxHorizontal(x, 45, "Target Kill", "target_kill_button", new AbstractEventHandler() {
+            @Override
+            public void Selected(String s, int toggled, int i1) {
+                targetKill = (toggled == 1);
+            }
+        });
+
+        pushButtonHorizontal(x, 45, "Dump DB", "dump_db", new AbstractEventHandler() {
+            @Override
+            public void Selected(String s, int toggled, int i1) {
+                GameClient.instance.getTableResult("whitelist", 10000);
+            }
+        });
+
+        pushButtonHorizontal(x, 45, "Up", "up_button", new AbstractEventHandler() {
+            @Override
+            public void Selected(String s, int toggled, int i1) {
+                if (yShift > 0) {
+                    yShift -= 1;
+                }
+            }
+        });
+
+        pushButtonHorizontal(x, 45, "Down", "down_button", new AbstractEventHandler() {
+            @Override
+            public void Selected(String s, int toggled, int i1) {
+                if (yShift < (orderedElements.size() - 1)) {
+                    yShift += 1;
+                }
+            }
+        });
+    }
+
+    private void updateName(IsoPlayer p, UITextBox2 box) {
+        StringBuilder name = new StringBuilder();
+        name.append(p.getDisplayName());
+        if (p.accessLevel.equalsIgnoreCase("admin")) {
+            name.append("*");
+        }
+
+        if (p.isInvisible()) {
+            name.append("!");
+        }
+
+        box.SetText(name.toString());
     }
 
     private void rebasePlayers() {
-        setHeight(120 + (25 * orderedElements.size()));
+        int count = Math.min(10, orderedElements.size() - yShift);
+        setHeight(Math.max(72 + (count * 25), 80));
 
-        int y = 68;
         for (CheatPlayer cp : orderedElements) {
             for (UIElement e : cp.elements) {
+                e.visible = false;
+            }
+        }
+
+        if (count < 0) {
+            return;
+        }
+
+        int y = 68;
+        for (int i = yShift; i < yShift + count; i++) {
+            CheatPlayer cp = orderedElements.get(i);
+            updateName(cp.player, (UITextBox2) cp.elements.get(0));
+
+            for (UIElement e : cp.elements) {
                 e.y = y;
+                e.visible = true;
             }
 
             y += 25;
@@ -134,25 +207,25 @@ public class CheatWindow extends NewWindow {
     private void createNewPlayers() {
         for (IsoPlayer p : GameClient.instance.getPlayers()) {
             if (!playerMap.containsKey(p)) {
-                CheatPlayer cp = new CheatPlayer();
+                CheatPlayer cp = new CheatPlayer(p);
 
                 int x = 5;
-                UITextBox2 nameLabel = new UITextBox2(UIFont.Small, x, 0, 120, 20, p.getDisplayName(), true);
+                UITextBox2 nameLabel = new UITextBox2(UIFont.Small, x, 0, 120, 20, "", true);
                 cp.elements.add(nameLabel);
                 x += nameLabel.getWidth();
                 x += 5;
 
-                CheatButton killButton = new CheatButton(new AbstractEventHandler() {
+                AdminToolButton killButton = new AdminToolButton(new AbstractEventHandler() {
                     @Override
                     public void Selected(String s, int i, int i1) {
-                        Cheat.kill(p);
+                        Cheats.kill(p, KillType.NORMAL_HIT);
                     }
                 }, x, 0, "Kill", "kill_player_" + p.getDisplayName());
                 cp.elements.add(killButton);
                 x += killButton.getWidth();
                 x += 5;
 
-                CheatButton lagButton = new CheatButton(new AbstractEventHandler() {
+                AdminToolButton lagButton = new AdminToolButton(new AbstractEventHandler() {
                     @Override
                     public void Selected(String s, int i, int i1) {
                         float scale = 1.f;
@@ -160,19 +233,19 @@ public class CheatWindow extends NewWindow {
                         float offY = (ThreadLocalRandom.current().nextFloat() * scale) - scale;
                         float offZ = (ThreadLocalRandom.current().nextFloat() * scale) - scale;
 
-                        GameClient.sendTeleport(p, p.x + offX, p.y + offY, p.z + offZ);
+                        Cheats.safeTeleport(p, p.x + offX, p.y + offY, p.z + offZ);
                     }
                 }, x, 0, "Lag", "lag_player_" + p.getDisplayName());
                 cp.elements.add(lagButton);
                 x += lagButton.getWidth();
                 x += 5;
 
-                CheatButton teleportButton = new CheatButton(new AbstractEventHandler() {
+                AdminToolButton teleportButton = new AdminToolButton(new AbstractEventHandler() {
                     @Override
                     public void Selected(String s, int i, int i1) {
                         for (IsoPlayer p2 : GameClient.instance.getPlayers()) {
                             if (p2.isLocalPlayer()) {
-                                GameClient.sendTeleport(p2, p.x, p.y, p.z);
+                                Cheats.safeTeleport(p2, p.x, p.y, p.z);
                             }
                         }
                     }
@@ -181,10 +254,48 @@ public class CheatWindow extends NewWindow {
                 x += teleportButton.getWidth();
                 x += 5;
 
-                CheatButton targetButton = new CheatButton(new AbstractEventHandler() {
+                AdminToolButton earRapeButton = new AdminToolButton(new AbstractEventHandler() {
+                    @Override
+                    public void Selected(String s, int i, int i1) {
+                        IsoGridSquare sq = p.square;
+                        if (sq != null) {
+                            SoundManager.instance.PlayWorldSound("BurnedObjectExploded", sq, 100.f, 100.f, 100.f, true);
+
+                            IsoMannequin manne = new IsoMannequin(p.getCell());
+                            manne.square = sq;
+                            manne.doNotSync = false;
+                            manne.setOutlineOnMouseover(true);
+
+                            manne.setSprite(IsoSpriteManager.instance.getSprite("furniture_tables_high_01_37"));
+
+                            sq.getObjects().add(manne);
+
+                            ByteBufferWriter byteBufferWriter = GameClient.connection.startPacket();
+                            PacketTypes.PacketType.AddItemToMap.doPacket(byteBufferWriter);
+                            byteBufferWriter.putByte((byte)24);
+                            manne.writeToRemoteBuffer(byteBufferWriter);
+                            PacketTypes.PacketType.AddItemToMap.send(GameClient.connection);
+
+                            sq.getObjects().remove(manne);
+                        }
+                    }
+                }, x, 0, "Ear Rape", "ear_rape_player_" + p.getDisplayName());
+                cp.elements.add(earRapeButton);
+                x += earRapeButton.getWidth();
+                x += 5;
+
+                AdminToolButton targetButton = new AdminToolButton(new AbstractEventHandler() {
                     @Override
                     public void Selected(String s, int i, int i1) {
                         target = p.getSteamID();
+
+                        try {
+                            Field f = ChatManager.class.getDeclaredField("player");
+                            f.setAccessible(true);
+                            f.set(ChatManager.getInstance(), p);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 }, x, 0, "Target", "target_player_" + p.getDisplayName());
                 cp.elements.add(targetButton);
@@ -195,6 +306,7 @@ public class CheatWindow extends NewWindow {
                 AddChild(killButton);
                 AddChild(lagButton);
                 AddChild(teleportButton);
+                AddChild(earRapeButton);
                 AddChild(targetButton);
 
                 playerMap.put(p, cp);
@@ -239,15 +351,15 @@ public class CheatWindow extends NewWindow {
         IsoPlayer t = findTarget();
         if (t != null) {
             if (targetFire) {
-                Cheat.startFire(t, true);
+                Cheats.startFire(t, true);
             }
 
             if (targetSmoke) {
-                Cheat.startFire(t, false);
+                Cheats.startFire(t, false);
             }
 
             if (targetKill) {
-                Cheat.kill(t);
+                Cheats.kill(t, KillType.NORMAL_HIT);
             }
         }
     }
@@ -266,6 +378,8 @@ public class CheatWindow extends NewWindow {
     @Override
     public void update() {
         visible = true;
+        setAlwaysOnTop(true);
+
         removeOldPlayers();
         createNewPlayers();
         rebasePlayers();
@@ -274,7 +388,9 @@ public class CheatWindow extends NewWindow {
         super.update();
     }
 
+    @RequiredArgsConstructor
     private class CheatPlayer {
+        private final IsoPlayer player;
         private final List<UIElement> elements = new LinkedList<>();
     }
 }
