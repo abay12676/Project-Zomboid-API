@@ -34,6 +34,8 @@ public class AntiCheat {
 
     // reflection data to access private zomboid fields..
 
+    // TODO FIXME replace reflection with MethodHandles
+
     private Field playerHitZombiePacketTarget;
     private Field zombieZombie;
 
